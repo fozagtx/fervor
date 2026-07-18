@@ -53,21 +53,33 @@ export TXLINE_API_TOKEN=...
 pnpm dev                       # http://localhost:3000
 ```
 
-Live smoke: `pnpm smoke`  
-**Mac notch DMG:** [Download Torq.dmg](https://github.com/fozagtx/fervor/releases/download/torq-mac/Torq.dmg) · build: `./macos/build.sh`
+Live smoke: `pnpm smoke`
+
+## Mac notch companion
+
+Torq includes a native **macOS Dynamic Island / menu-bar notch** app — same live TxLINE feed as the website (scores, win%, expand on hover).
+
+| | |
+|---|---|
+| **Download** | [Torq.dmg](https://github.com/fozagtx/fervor/releases/download/torq-mac/Torq.dmg) |
+| **Install** | Open DMG → drag Torq to Applications → right-click → Open |
+| **Docs** | [`macos/README.md`](macos/README.md) |
+| **Build** | `./macos/build.sh && open macos/dist/Torq.app` |
 
 ## Key Features
 
 - Win-probability river + Drama Score + market-shift moments  
 - Beat the Market streaks · Who wins crowd · Moments feed  
 - Replay 10×/30×/60× · Pundit TTS · FT recap + share  
-- On-chain score proof · PWA · `/embed` · `/watch` · macOS island  
+- On-chain score proof · PWA · `/embed` · `/watch`  
+- **macOS Dynamic Island / notch companion** (DMG download above)  
 
 ## Docs
 
 | Doc | What’s in it |
 |---|---|
 | [TxLINE integration](docs/txline.md) | Endpoints used + Earn API feedback |
+| [Mac notch install](macos/README.md) | DMG download + island setup |
 | [Submission / Earn paste](docs/submission.md) | Form answers, product notes |
 | [Demo script](claudedocs/demo-script.md) | 5-min recording spine |
 | [UX context](docs/ux-context-profile.md) | Fan language / north star |
