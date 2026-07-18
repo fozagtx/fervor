@@ -2,6 +2,8 @@
 
 import { Card, CardBody, Chip } from "@heroui/react";
 import type { MatchState } from "@/lib/txline/types";
+import { dramaScore } from "@/lib/drama";
+import DramaMeter from "./DramaMeter";
 import { COLORS } from "./PulseChart";
 
 export default function ScoreHeader({ match, replay }: { match: MatchState; replay?: boolean }) {
@@ -61,6 +63,10 @@ export default function ScoreHeader({ match, replay }: { match: MatchState; repl
         <p className="text-center text-tiny capitalize text-default-400">
           {live || finished ? match.gameState : replay ? "Replay" : "Awaiting kick-off"}
         </p>
+
+        {(live || replay) && match.probs.length > 3 && (
+          <DramaMeter score={dramaScore(match)} />
+        )}
       </CardBody>
     </Card>
   );

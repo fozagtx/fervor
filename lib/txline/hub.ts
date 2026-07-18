@@ -96,14 +96,29 @@ class MatchHub {
     this.broadcast({ type: "event", event });
   }
 
-  /** Pre-build replay files for finished fixtures so replays start instantly. */
+  /**
+   * Pre-build replay files for finished fixtures so replays start instantly,
+   * and lift each one's final score into the lobby state.
+   */
   private async warmReplays() {
-    const { ensureMaterialized } = await import("./replay");
+    const { ensureMaterialized, finalStateFor } = await import("./replay");
     for (const m of this.snapshot()) {
       const finished = isEndedStatus(m.statusId) || m.startTime < Date.now() - 3 * 3600000;
       if (!finished) continue;
       try {
         await ensureMaterialized(m.fixtureId, m.startTime);
+        const finalState = finalStateFor(m);
+        if (finalState) {
+          Object.assign(m, finalState);
+          this.broadcast({
+            type: "score",
+            fixtureId: m.fixtureId,
+            scoreHome: m.scoreHome,
+            scoreAway: m.scoreAway,
+            gameState: m.gameState,
+            minute: m.minute,
+          });
+        }
       } catch (e) {
         console.error(`[hub] warm replay ${m.fixtureId} failed:`, String(e).slice(0, 120));
       }

@@ -8,6 +8,8 @@ import ScoreHeader from "@/components/ScoreHeader";
 import PulseChart from "@/components/PulseChart";
 import EventTicker from "@/components/EventTicker";
 import PredictCard from "@/components/PredictCard";
+import ProofBadge from "@/components/ProofBadge";
+import RecapCard from "@/components/RecapCard";
 import { PunditCaption, PunditToggle } from "@/components/PunditVoice";
 import { useMatchStream } from "@/lib/useMatchStream";
 
@@ -140,7 +142,11 @@ export default function MatchScreen({ fixtureId }: { fixtureId: number }) {
             </CardBody>
           </Card>
 
-          {(replay || !finished) && match.probs.length > 0 && <PredictCard match={match} />}
+          {(finished || replayDone) && match.probs.length > 5 && <RecapCard match={match} />}
+
+          {(replay || !finished) && !replayDone && match.probs.length > 0 && (
+            <PredictCard match={match} />
+          )}
 
           <section className="flex flex-col gap-3">
             <div className="flex items-center justify-between px-1">
@@ -155,6 +161,8 @@ export default function MatchScreen({ fixtureId }: { fixtureId: number }) {
             <PunditCaption match={match} enabled={pundit} />
             <EventTicker events={match.events} />
           </section>
+
+          <ProofBadge fixtureId={match.fixtureId} />
         </>
       )}
     </main>

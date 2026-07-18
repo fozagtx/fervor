@@ -21,23 +21,26 @@ interface Stats {
   best: number;
   wins: number;
   plays: number;
+  points: number;
 }
 
 const STATS_KEY = "matchpulse-market-stats";
 
+const EMPTY_STATS: Stats = { streak: 0, best: 0, wins: 0, plays: 0, points: 0 };
+
 function loadStats(): Stats {
-  if (typeof window === "undefined") return { streak: 0, best: 0, wins: 0, plays: 0 };
+  if (typeof window === "undefined") return EMPTY_STATS;
   try {
-    return { streak: 0, best: 0, wins: 0, plays: 0, ...JSON.parse(localStorage.getItem(STATS_KEY) || "{}") };
+    return { ...EMPTY_STATS, ...JSON.parse(localStorage.getItem(STATS_KEY) || "{}") };
   } catch {
-    return { streak: 0, best: 0, wins: 0, plays: 0 };
+    return EMPTY_STATS;
   }
 }
 
 export default function PredictCard({ match }: { match: MatchState }) {
   const [side, setSide] = useState<"home" | "away">("home");
   const [pick, setPick] = useState<Pick | null>(null);
-  const [result, setResult] = useState<{ won: boolean; from: number; to: number; pick: Pick } | null>(null);
+  const [result, setResult] = useState<{ won: boolean; from: number; to: number; pick: Pick; gained: number } | null>(null);
   const [stats, setStats] = useState<Stats>(loadStats);
 
   const latest = match.probs[match.probs.length - 1];
@@ -49,15 +52,19 @@ export default function PredictCard({ match }: { match: MatchState }) {
     const current = pick.side === "home" ? latest.home : latest.away;
     const moved = current - pick.startProb;
     const won = pick.dir === "up" ? moved > 0 : moved < 0;
+    const newStreak = won ? stats.streak + 1 : 0;
+    // 100 base × streak multiplier + a bonus for how far the market moved
+    const gained = won ? 100 * newStreak + Math.round(Math.abs(moved) * 10) : 0;
     const next: Stats = {
       plays: stats.plays + 1,
       wins: stats.wins + (won ? 1 : 0),
-      streak: won ? stats.streak + 1 : 0,
-      best: Math.max(stats.best, won ? stats.streak + 1 : 0),
+      streak: newStreak,
+      best: Math.max(stats.best, newStreak),
+      points: stats.points + gained,
     };
     setStats(next);
     localStorage.setItem(STATS_KEY, JSON.stringify(next));
-    setResult({ won, from: pick.startProb, to: current, pick });
+    setResult({ won, from: pick.startProb, to: current, pick, gained });
     setPick(null);
   }, [latest, pick, stats]);
 
@@ -99,6 +106,11 @@ export default function PredictCard({ match }: { match: MatchState }) {
             {stats.streak > 1 && (
               <Chip size="sm" variant="flat" color="warning" className="font-mono" startContent={<Icon icon="solar:fire-bold-duotone" width={13} className="ml-1" />}>
                 {stats.streak}
+              </Chip>
+            )}
+            {stats.points > 0 && (
+              <Chip size="sm" variant="flat" color="warning" className="font-mono">
+                {stats.points} pts
               </Chip>
             )}
             {stats.plays > 0 && (
@@ -155,7 +167,7 @@ export default function PredictCard({ match }: { match: MatchState }) {
                   }`}
                 >
                   <p className="text-small font-medium">
-                    {result.won ? "Called it!" : "The market disagreed"}
+                    {result.won ? `Called it! +${result.gained} pts` : "The market disagreed"}
                     <span className="ml-2 font-mono text-tiny text-default-500">
                       {result.from.toFixed(1)}% → {result.to.toFixed(1)}%
                     </span>

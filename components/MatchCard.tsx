@@ -4,6 +4,8 @@ import { Card, CardBody, Chip } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { useRouter } from "next/navigation";
 import type { MatchState } from "@/lib/txline/types";
+import { dramaScore } from "@/lib/drama";
+import DramaMeter from "./DramaMeter";
 import { COLORS } from "./PulseChart";
 
 function isLive(m: MatchState): boolean {
@@ -47,6 +49,7 @@ export default function MatchCard({ match }: { match: MatchState }) {
             </p>
           </div>
           <div className="flex items-center gap-3">
+            {live && <DramaMeter score={dramaScore(match)} compact />}
             {(live || finished) && (
               <p className="font-mono text-xl font-semibold tabular-nums">
                 {match.scoreHome}–{match.scoreAway}

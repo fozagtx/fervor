@@ -275,6 +275,30 @@ export async function ensureMaterialized(fixtureId: number, startTime: number): 
 }
 
 /**
+ * Derive the final score and state of a fixture from its stored timeline by
+ * running every scores message through the normal pipeline on a scratch copy.
+ */
+export function finalStateFor(
+  match: MatchState
+): { scoreHome: number; scoreAway: number; gameState: string; statusId?: number; minute?: number } | null {
+  let timeline = loadMaterialized(match.fixtureId);
+  if (timeline.length < 10) timeline = loadRecordings(match.fixtureId);
+  if (timeline.length < 10) return null;
+  const scratch: MatchState = { ...match, scoreHome: 0, scoreAway: 0, probs: [], events: [] };
+  for (const item of timeline) {
+    if (item.kind === "scores") applyScores(scratch, item.data as TxScores);
+  }
+  if (scratch.statusId === undefined) return null;
+  return {
+    scoreHome: scratch.scoreHome,
+    scoreAway: scratch.scoreAway,
+    gameState: scratch.gameState,
+    statusId: scratch.statusId,
+    minute: scratch.minute,
+  };
+}
+
+/**
  * Per-connection replay session. Re-runs a recorded match through the same
  * normalization pipeline as live data, compressed by `speed`.
  * Returns a cancel function.
