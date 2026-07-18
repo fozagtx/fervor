@@ -1,16 +1,17 @@
 # Torq
 
-A live World Cup **second-screen** app on [TxLINE](https://txline.txodds.com) consensus odds and Solana **TxOracle**.
+A live World Cup **second-screen** app on [TxLINE](https://txline.txodds.com) consensus odds and Solana **TxOracle** — plus a **macOS Dynamic Island / notch companion** for live scores and win% without leaving your desktop.
 
 Fans watch a win-probability **wave**, **Drama Score**, market-shift moments, **Beat the Market** (skill calls — no wagering), full replays, and one-tap on-chain score proof. No betting, no sign-up, no crypto required.
 
 | | |
 |---|---|
 | **App** | https://fervor.up.railway.app |
+| **Mac notch (DMG)** | [Download Torq.dmg](https://github.com/fozagtx/fervor/releases/download/torq-mac/Torq.dmg) |
 | **Repo** | https://github.com/fozagtx/fervor |
 | **Track** | TxODDS · Consumer & Fan Experiences |
 
-> First second-screen that combines consensus-odds Drama Score + a playable mini-game + verifiable outcomes — without betting.
+> First second-screen that combines consensus-odds Drama Score + a playable mini-game + verifiable outcomes — without betting. Ships with a native **Mac notch** app.
 
 ## How It Works
 
