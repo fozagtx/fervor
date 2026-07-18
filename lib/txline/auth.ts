@@ -224,6 +224,16 @@ async function subscribeAndActivate(jwt: string): Promise<AuthCache> {
 /** Get working credentials, running the full subscribe flow at most once. */
 export async function getAuth(): Promise<{ jwt: string; apiToken: string }> {
   if (state?.apiToken && state.jwt) return state;
+  // Deployed servers get pre-activated credentials via env so the signing
+  // wallet never has to leave the machine that ran the subscription.
+  if (process.env.TXLINE_JWT && process.env.TXLINE_API_TOKEN) {
+    state = {
+      jwt: process.env.TXLINE_JWT,
+      apiToken: process.env.TXLINE_API_TOKEN,
+      wallet: "env",
+    };
+    return state;
+  }
   const cached = readCache();
   if (cached?.apiToken && cached.jwt) {
     state = cached;
