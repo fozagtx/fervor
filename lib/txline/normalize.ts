@@ -201,7 +201,7 @@ export function applyScores(match: MatchState, s: TxScores): MatchEvent[] {
         kind: "goal_disallowed",
         side,
         minute: match.minute,
-        label: `Goal disallowed — ${team}, back to ${match.scoreHome}–${match.scoreAway}`,
+        label: `Goal disallowed: ${team}, back to ${match.scoreHome}–${match.scoreAway}`,
       })
     );
   }
@@ -217,7 +217,7 @@ export function applyScores(match: MatchState, s: TxScores): MatchEvent[] {
           kind: "card_red",
           side: info.side,
           minute: match.minute,
-          label: `Red card — ${team} down to ten`,
+          label: `Red card! ${team} down to ten`,
         })
       );
     } else if (s.Action === "penalty") {
