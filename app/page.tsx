@@ -4,6 +4,7 @@ import { Button, Card, CardBody, Chip } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import Link from "next/link";
 import FeedFab from "@/components/FeedFab";
+import Mascot from "@/components/Mascot";
 import TopBar from "@/components/TopBar";
 import MatchCard from "@/components/MatchCard";
 import { favScore, useFavorites } from "@/lib/favorites";
@@ -36,9 +37,12 @@ export default function Landing() {
 
       <section className="flex flex-col gap-4 px-1 pt-4 sm:pt-8">
         <div className="flex flex-col gap-3">
-          <Chip size="sm" variant="flat" color="primary" className="w-fit">
-            World Cup 2026
-          </Chip>
+          <div className="flex items-center gap-3">
+            <Mascot size={44} />
+            <Chip size="sm" variant="flat" color="primary" className="w-fit">
+              World Cup 2026
+            </Chip>
+          </div>
           <h1 className="text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
             Every match has a heartbeat.
           </h1>

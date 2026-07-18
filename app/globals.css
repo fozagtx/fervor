@@ -47,6 +47,11 @@ body {
   font-family: var(--font-mono);
 }
 
+.font-pixel {
+  font-family: var(--font-pixel), var(--font-mono);
+  letter-spacing: 0.02em;
+}
+
 @keyframes pulse-dot {
   0%,
   100% {

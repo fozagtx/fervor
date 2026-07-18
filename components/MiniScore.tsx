@@ -3,6 +3,7 @@
 import { Icon } from "@iconify/react";
 import Link from "next/link";
 import { dramaScore } from "@/lib/drama";
+import Mascot from "@/components/Mascot";
 import { flagOf } from "@/lib/flags";
 import { useMatchStream } from "@/lib/useMatchStream";
 import { COLORS } from "./PulseChart";
@@ -73,6 +74,7 @@ export default function MiniScore({ fixtureId }: { fixtureId: number }) {
         </div>
       )}
 
+      <span className="absolute bottom-1 left-2 opacity-80"><Mascot size={20} /></span>
       <Link
         href={`/match/${fixtureId}`}
         target="_blank"

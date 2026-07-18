@@ -4,6 +4,7 @@ import { Button, Chip, Skeleton } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import Mascot from "@/components/Mascot";
 import { flagOf } from "@/lib/flags";
 import { COLORS } from "@/components/PulseChart";
 import type { ProbPoint } from "@/lib/txline/types";
@@ -109,7 +110,7 @@ export default function FeedPage() {
 
       {moments === null && (
         <section className="flex h-dvh snap-start flex-col items-center justify-center gap-4 px-8">
-          <Skeleton className="h-8 w-40 rounded-full" />
+          <Mascot size={72} />
           <Skeleton className="h-40 w-full max-w-sm rounded-large" />
           <p className="text-tiny text-default-400">Loading the drama…</p>
         </section>
@@ -133,7 +134,7 @@ export default function FeedPage() {
           >
             <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-6">
               <div className="flex items-center justify-between">
-                <Chip size="sm" variant="flat" color="primary" className="font-mono font-semibold">
+                <Chip size="sm" variant="flat" color="primary" className="font-pixel">
                   <span className="flex items-center gap-1.5">
                     <Icon icon={meta.icon} width={14} />
                     {meta.chip}
@@ -162,7 +163,10 @@ export default function FeedPage() {
                 </div>
               </div>
 
-              <p className="text-center text-xl font-semibold leading-snug">{m.label}</p>
+              <div className="flex items-center justify-center gap-3">
+                {m.kind === "goal" && <Mascot size={40} celebrate />}
+                <p className="text-center text-xl font-semibold leading-snug">{m.label}</p>
+              </div>
 
               {m.spark.length > 3 && <Spark spark={m.spark} />}
 
@@ -216,7 +220,7 @@ export default function FeedPage() {
             {i === 0 && (
               <div className="pointer-events-none absolute bottom-20 left-1/2 flex -translate-x-1/2 flex-col items-center gap-1 text-default-400">
                 <Icon icon="solar:alt-arrow-up-linear" width={18} className="animate-bounce" />
-                <span className="text-tiny">swipe for more drama</span>
+                <span className="font-pixel text-tiny">SWIPE FOR MORE DRAMA</span>
               </div>
             )}
           </section>

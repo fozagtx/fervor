@@ -1,10 +1,10 @@
 import AppKit
 import WebKit
 
-// Fervor for macOS: the match lives in your notch.
-// A floating island hugs the top-center of the screen like a Dynamic
-// Island: flags, score, minute and a live win-probability bar. Hovering
-// expands it into the streaming mini scoreboard.
+// Fervor island: the World Cup living in your notch.
+// One panel that morphs, Dynamic Island style: springs open on hover into
+// the streaming scoreboard, pulses when anyone scores, with Beat the
+// mascot kicking along to an 8-bit chime.
 
 let BASE = ProcessInfo.processInfo.environment["FERVOR_URL"] ?? "https://fervor.up.railway.app"
 
@@ -38,90 +38,60 @@ struct MatchInfo {
     }
 }
 
-final class IslandView: NSView {
-    let label = NSTextField(labelWithString: "⚽ Fervor")
-    let barHome = NSView()
-    let barDraw = NSView()
-    let barAway = NSView()
-    let barTrack = NSView()
-
-    override init(frame: NSRect) {
-        super.init(frame: frame)
-        wantsLayer = true
-        layer?.backgroundColor = NSColor.black.cgColor
-        layer?.cornerRadius = 14
-        layer?.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner] // round bottom only
-        layer?.borderWidth = 0.5
-        layer?.borderColor = NSColor(white: 1, alpha: 0.12).cgColor
-
-        label.font = NSFont.monospacedDigitSystemFont(ofSize: 13, weight: .semibold)
-        label.textColor = .white
-        label.alignment = .center
-        label.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(label)
-
-        barTrack.wantsLayer = true
-        barTrack.layer?.backgroundColor = NSColor(white: 1, alpha: 0.15).cgColor
-        barTrack.layer?.cornerRadius = 1.5
-        barTrack.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(barTrack)
-        for (bar, color) in [(barHome, NSColor(red: 0.06, green: 0.72, blue: 0.51, alpha: 1)),
-                             (barDraw, NSColor(white: 0.55, alpha: 1)),
-                             (barAway, NSColor(red: 0.51, green: 0.55, blue: 0.97, alpha: 1))] {
-            bar.wantsLayer = true
-            bar.layer?.backgroundColor = color.cgColor
-            barTrack.addSubview(bar)
-        }
-
-        NSLayoutConstraint.activate([
-            label.centerXAnchor.constraint(equalTo: centerXAnchor),
-            label.topAnchor.constraint(equalTo: topAnchor, constant: 6),
-            barTrack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 18),
-            barTrack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -18),
-            barTrack.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -7),
-            barTrack.heightAnchor.constraint(equalToConstant: 3),
-        ])
-    }
-
-    required init?(coder: NSCoder) { fatalError() }
-
-    func setProbs(home: Double?, draw: Double?, away: Double?) {
-        guard let h = home, let d = draw, let a = away else {
-            barTrack.isHidden = true
-            return
-        }
-        barTrack.isHidden = false
-        let w = barTrack.bounds.width
-        let total = max(1, h + d + a)
-        let hw = w * h / total
-        let dw = w * d / total
-        barHome.frame = NSRect(x: 0, y: 0, width: hw, height: 3)
-        barDraw.frame = NSRect(x: hw, y: 0, width: dw, height: 3)
-        barAway.frame = NSRect(x: hw + dw, y: 0, width: w - hw - dw, height: 3)
-    }
-
-    override func layout() {
-        super.layout()
-        setNeedsDisplay(bounds)
-    }
-}
+let COLLAPSED = NSSize(width: 320, height: 38)
+let EXPANDED = NSSize(width: 420, height: 184)
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
-    var island: NSPanel!
-    var islandView: IslandView!
-    var webPanel: NSPanel?
+    var panel: NSPanel!
+    var container: NSView!
+    var mascotView: NSImageView!
+    var label: NSTextField!
+    var barTrack: NSView!
+    var barHome = NSView()
+    var barDraw = NSView()
+    var barAway = NSView()
+    var webView: WKWebView?
     var statusItem: NSStatusItem!
-    var timer: Timer?
+
+    var mascotIdle: NSImage?
+    var mascotKick: NSImage?
+    var goalSound: NSSound?
+
+    var pollTimer: Timer?
+    var expandTimer: Timer?
+    var collapseTimer: Timer?
+    var isExpanded = false
+
     var currentFixture = 0
+    var loadedFixture = 0
     var scores: [Int: String] = [:]
     var pinnedFixture = 0
     var pinnedUntil = Date.distantPast
 
-    let collapsed = NSSize(width: 300, height: 34)
-    let expanded = NSSize(width: 400, height: 170)
+    // MARK: launch
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        // Minimal status item for control (quit / open)
+        loadAssets()
+        makeStatusItem()
+        makeIsland()
+        enterFromNotch()
+        refresh()
+        pollTimer = Timer.scheduledTimer(withTimeInterval: 15, repeats: true) { [weak self] _ in
+            self?.refresh()
+        }
+        NotificationCenter.default.addObserver(
+            forName: NSApplication.didChangeScreenParametersNotification,
+            object: nil, queue: .main
+        ) { [weak self] _ in self?.seat(animated: false) }
+    }
+
+    func loadAssets() {
+        if let p = Bundle.main.path(forResource: "mascot-idle", ofType: "png") { mascotIdle = NSImage(contentsOfFile: p) }
+        if let p = Bundle.main.path(forResource: "mascot-kick", ofType: "png") { mascotKick = NSImage(contentsOfFile: p) }
+        if let p = Bundle.main.path(forResource: "goal", ofType: "wav") { goalSound = NSSound(contentsOfFile: p, byReference: true) }
+    }
+
+    func makeStatusItem() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         statusItem.button?.title = "⚽"
         let menu = NSMenu()
@@ -130,63 +100,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(NSMenuItem(title: "Quit Fervor", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         menu.items[0].target = self
         statusItem.menu = menu
-
-        // The island: borderless always-on-top panel hugging the notch
-        island = NSPanel(
-            contentRect: NSRect(origin: .zero, size: collapsed),
-            styleMask: [.borderless, .nonactivatingPanel],
-            backing: .buffered,
-            defer: false
-        )
-        island.level = .statusBar
-        island.isOpaque = false
-        island.backgroundColor = .clear
-        island.hasShadow = true
-        island.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
-        island.isMovableByWindowBackground = false
-        island.hidesOnDeactivate = false
-
-        islandView = IslandView(frame: NSRect(origin: .zero, size: collapsed))
-        island.contentView = islandView
-
-        let tracking = NSTrackingArea(
-            rect: .zero,
-            options: [.mouseEnteredAndExited, .activeAlways, .inVisibleRect],
-            owner: self,
-            userInfo: nil
-        )
-        islandView.addTrackingArea(tracking)
-
-        positionIsland()
-        island.orderFrontRegardless()
-
-        refresh()
-        timer = Timer.scheduledTimer(withTimeInterval: 15, repeats: true) { [weak self] _ in
-            self?.refresh()
-        }
-
-        NotificationCenter.default.addObserver(
-            forName: NSApplication.didChangeScreenParametersNotification,
-            object: nil, queue: .main
-        ) { [weak self] _ in self?.positionIsland() }
     }
 
-    func positionIsland() {
-        guard let screen = NSScreen.main else { return }
-        let f = screen.frame
-        let size = island.frame.size
-        let x = f.midX - size.width / 2
-        let y = f.maxY - size.height // flush with the very top, hugging the notch
-        island.setFrame(NSRect(x: x, y: y, width: size.width, height: size.height), display: true)
-    }
-
-    @objc func mouseEntered(with event: NSEvent) { expand() }
-    @objc func mouseExited(with event: NSEvent) { collapse() }
-
-    func expand() {
-        guard currentFixture != 0, webPanel == nil else { return }
-        let panel = NSPanel(
-            contentRect: NSRect(origin: .zero, size: expanded),
+    func makeIsland() {
+        panel = NSPanel(
+            contentRect: NSRect(origin: .zero, size: COLLAPSED),
             styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered, defer: false
         )
@@ -195,17 +113,41 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         panel.backgroundColor = .clear
         panel.hasShadow = true
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
+        panel.hidesOnDeactivate = false
 
-        let container = NSView(frame: NSRect(origin: .zero, size: expanded))
+        container = NSView(frame: NSRect(origin: .zero, size: COLLAPSED))
         container.wantsLayer = true
         container.layer?.backgroundColor = NSColor.black.cgColor
-        container.layer?.cornerRadius = 18
+        container.layer?.cornerRadius = 15
         container.layer?.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
+        container.layer?.borderWidth = 0.5
+        container.layer?.borderColor = NSColor(white: 1, alpha: 0.14).cgColor
+        container.autoresizesSubviews = false
 
-        let web = WKWebView(frame: container.bounds.insetBy(dx: 6, dy: 6))
-        web.autoresizingMask = [.width, .height]
-        web.load(URLRequest(url: URL(string: "\(BASE)/mini/\(currentFixture)")!))
-        container.addSubview(web)
+        mascotView = NSImageView(frame: NSRect(x: 10, y: 9, width: 20, height: 20))
+        mascotView.image = mascotIdle
+        mascotView.imageScaling = .scaleProportionallyUpOrDown
+        container.addSubview(mascotView)
+
+        label = NSTextField(labelWithString: "Fervor")
+        label.font = NSFont.monospacedDigitSystemFont(ofSize: 13, weight: .semibold)
+        label.textColor = .white
+        label.alignment = .center
+        label.frame = NSRect(x: 34, y: 11, width: COLLAPSED.width - 48, height: 18)
+        container.addSubview(label)
+
+        barTrack = NSView(frame: NSRect(x: 20, y: 5, width: COLLAPSED.width - 40, height: 3))
+        barTrack.wantsLayer = true
+        barTrack.layer?.backgroundColor = NSColor(white: 1, alpha: 0.15).cgColor
+        barTrack.layer?.cornerRadius = 1.5
+        for (bar, color) in [(barHome, NSColor(red: 0.06, green: 0.72, blue: 0.51, alpha: 1)),
+                             (barDraw, NSColor(white: 0.55, alpha: 1)),
+                             (barAway, NSColor(red: 0.51, green: 0.55, blue: 0.97, alpha: 1))] {
+            bar.wantsLayer = true
+            bar.layer?.backgroundColor = color.cgColor
+            barTrack.addSubview(bar)
+        }
+        container.addSubview(barTrack)
 
         let tracking = NSTrackingArea(
             rect: .zero,
@@ -213,27 +155,121 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             owner: self, userInfo: nil
         )
         container.addTrackingArea(tracking)
+        let click = NSClickGestureRecognizer(target: self, action: #selector(toggleExpand))
+        container.addGestureRecognizer(click)
 
         panel.contentView = container
-        if let screen = NSScreen.main {
-            let f = screen.frame
-            panel.setFrame(
-                NSRect(x: f.midX - expanded.width / 2, y: f.maxY - expanded.height,
-                       width: expanded.width, height: expanded.height),
-                display: true
-            )
+    }
+
+    // MARK: geometry + entrance
+
+    func targetFrame(_ size: NSSize) -> NSRect {
+        guard let screen = NSScreen.main else { return NSRect(origin: .zero, size: size) }
+        let f = screen.frame
+        return NSRect(x: f.midX - size.width / 2, y: f.maxY - size.height,
+                      width: size.width, height: size.height)
+    }
+
+    func seat(animated: Bool) {
+        let frame = targetFrame(isExpanded ? EXPANDED : COLLAPSED)
+        if animated {
+            NSAnimationContext.runAnimationGroup { ctx in
+                ctx.duration = 0.3
+                panel.animator().setFrame(frame, display: true)
+            }
+        } else {
+            panel.setFrame(frame, display: true)
         }
+    }
+
+    /// Slide down from behind the notch on launch.
+    func enterFromNotch() {
+        let final = targetFrame(COLLAPSED)
+        var hidden = final
+        hidden.origin.y = final.maxY // fully above the screen edge
+        panel.setFrame(hidden, display: false)
         panel.orderFrontRegardless()
-        webPanel = panel
-        island.orderOut(nil)
+        NSAnimationContext.runAnimationGroup { ctx in
+            ctx.duration = 0.45
+            ctx.timingFunction = CAMediaTimingFunction(controlPoints: 0.2, 1.25, 0.5, 1)
+            panel.animator().setFrame(final, display: true)
+        }
+    }
+
+    // MARK: hover intent + morph
+
+    @objc func mouseEntered(with event: NSEvent) {
+        collapseTimer?.invalidate()
+        guard !isExpanded else { return }
+        expandTimer?.invalidate()
+        expandTimer = Timer.scheduledTimer(withTimeInterval: 0.12, repeats: false) { [weak self] _ in
+            self?.expand()
+        }
+    }
+
+    @objc func mouseExited(with event: NSEvent) {
+        expandTimer?.invalidate()
+        guard isExpanded else { return }
+        collapseTimer?.invalidate()
+        collapseTimer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: false) { [weak self] _ in
+            self?.collapse()
+        }
+    }
+
+    @objc func toggleExpand() {
+        isExpanded ? collapse() : expand()
+    }
+
+    func ensureWebView() {
+        if webView == nil {
+            let web = WKWebView(frame: NSRect(x: 8, y: 8, width: EXPANDED.width - 16, height: EXPANDED.height - 16))
+            web.alphaValue = 0
+            web.setValue(false, forKey: "drawsBackground")
+            container.addSubview(web)
+            webView = web
+        }
+        if loadedFixture != currentFixture, currentFixture != 0 {
+            webView?.load(URLRequest(url: URL(string: "\(BASE)/mini/\(currentFixture)")!))
+            loadedFixture = currentFixture
+        }
+    }
+
+    func expand() {
+        guard !isExpanded, currentFixture != 0 else { return }
+        isExpanded = true
+        ensureWebView()
+        webView?.frame = NSRect(x: 8, y: 8, width: EXPANDED.width - 16, height: EXPANDED.height - 16)
+
+        NSAnimationContext.runAnimationGroup { ctx in
+            ctx.duration = 0.36
+            ctx.allowsImplicitAnimation = true
+            ctx.timingFunction = CAMediaTimingFunction(controlPoints: 0.3, 1.28, 0.55, 1) // spring overshoot
+            panel.animator().setFrame(targetFrame(EXPANDED), display: true)
+            container.layer?.cornerRadius = 22
+            label.animator().alphaValue = 0
+            barTrack.animator().alphaValue = 0
+            mascotView.animator().alphaValue = 0
+            webView?.animator().alphaValue = 1
+        }
     }
 
     func collapse() {
-        webPanel?.orderOut(nil)
-        webPanel = nil
-        positionIsland()
-        island.orderFrontRegardless()
+        guard isExpanded else { return }
+        isExpanded = false
+        NSAnimationContext.runAnimationGroup { ctx in
+            ctx.duration = 0.28
+            ctx.allowsImplicitAnimation = true
+            ctx.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            panel.animator().setFrame(targetFrame(COLLAPSED), display: true)
+            container.layer?.cornerRadius = 15
+            label.animator().alphaValue = 1
+            barTrack.animator().alphaValue = 1
+            mascotView.animator().alphaValue = 1
+            webView?.animator().alphaValue = 0
+        }
     }
+
+    // MARK: data
 
     @objc func openSite() {
         NSWorkspace.shared.open(URL(string: currentFixture == 0 ? BASE : "\(BASE)/match/\(currentFixture)")!)
@@ -264,72 +300,104 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 ))
             }
 
-            let live = matches.filter { $0.isLive }
-            let upcoming = matches
-                .filter { $0.gameState.lowercased().contains("sched") }
-                .sorted { $0.startTime < $1.startTime }
-            let pick = live.first ?? upcoming.first
-
-            DispatchQueue.main.async {
-                // Any goal anywhere: jump the island to that match
-                var goalMatch: MatchInfo? = nil
-                for m in matches {
-                    let key = "\(m.scoreHome)-\(m.scoreAway)"
-                    if let prev = self.scores[m.fixtureId], prev != key, m.isLive {
-                        goalMatch = m
-                    }
-                    self.scores[m.fixtureId] = key
-                }
-                if let g = goalMatch {
-                    self.pinnedFixture = g.fixtureId
-                    self.pinnedUntil = Date().addingTimeInterval(60)
-                    NSSound(named: "Glass")?.play()
-                    self.pulseIsland()
-                }
-
-                var shown = pick
-                if Date() < self.pinnedUntil,
-                   let pinned = matches.first(where: { $0.fixtureId == self.pinnedFixture }) {
-                    shown = pinned
-                }
-                guard let pick = shown else { return }
-                self.currentFixture = pick.fixtureId
-                let text: String
-                if pick.isLive {
-                    let min = pick.minute.map { "\(Int($0))′" } ?? "LIVE"
-                    text = "\(flag(pick.home)) \(pick.scoreHome)–\(pick.scoreAway) \(flag(pick.away))  \(min)"
-                } else {
-                    let fmt = DateFormatter()
-                    fmt.dateFormat = "HH:mm"
-                    let t = fmt.string(from: Date(timeIntervalSince1970: pick.startTime / 1000))
-                    text = "\(flag(pick.home)) vs \(flag(pick.away))  \(t)"
-                }
-                self.islandView.label.stringValue = text
-                self.islandView.setProbs(home: pick.probHome, draw: pick.probDraw, away: pick.probAway)
-
-            }
+            DispatchQueue.main.async { self.apply(matches) }
         }.resume()
     }
 
-    func pulseIsland() {
-        guard let screen = NSScreen.main else { return }
-        let f = screen.frame
-        let bigger = NSSize(width: collapsed.width + 40, height: collapsed.height + 6)
+    func apply(_ matches: [MatchInfo]) {
+        // Every goal, anywhere, takes over the island
+        var goalMatch: MatchInfo? = nil
+        for m in matches {
+            let key = "\(m.scoreHome)-\(m.scoreAway)"
+            if let prev = scores[m.fixtureId], prev != key, m.isLive {
+                goalMatch = m
+            }
+            scores[m.fixtureId] = key
+        }
+        if let g = goalMatch {
+            pinnedFixture = g.fixtureId
+            pinnedUntil = Date().addingTimeInterval(60)
+            celebrateGoal()
+        }
+
+        let live = matches.filter { $0.isLive }
+        let upcoming = matches
+            .filter { $0.gameState.lowercased().contains("sched") }
+            .sorted { $0.startTime < $1.startTime }
+        var pick = live.first ?? upcoming.first
+        if Date() < pinnedUntil, let pinned = matches.first(where: { $0.fixtureId == pinnedFixture }) {
+            pick = pinned
+        }
+        guard let pick else { return }
+
+        let fixtureChanged = currentFixture != pick.fixtureId
+        currentFixture = pick.fixtureId
+        if isExpanded && fixtureChanged { ensureWebView() }
+
+        let text: String
+        if pick.isLive {
+            let min = pick.minute.map { "\(Int($0))′" } ?? "LIVE"
+            text = "\(flag(pick.home)) \(pick.scoreHome)–\(pick.scoreAway) \(flag(pick.away))  \(min)"
+        } else {
+            let fmt = DateFormatter()
+            fmt.dateFormat = "HH:mm"
+            let t = fmt.string(from: Date(timeIntervalSince1970: pick.startTime / 1000))
+            text = "\(flag(pick.home)) vs \(flag(pick.away))  \(t)"
+        }
+        if label.stringValue != text { crossfadeLabel(to: text) }
+        setProbs(home: pick.probHome, draw: pick.probDraw, away: pick.probAway)
+    }
+
+    func crossfadeLabel(to text: String) {
+        guard !isExpanded else { label.stringValue = text; return }
+        NSAnimationContext.runAnimationGroup { ctx in
+            ctx.duration = 0.12
+            label.animator().alphaValue = 0
+        } completionHandler: {
+            self.label.stringValue = text
+            NSAnimationContext.runAnimationGroup { ctx in
+                ctx.duration = 0.18
+                self.label.animator().alphaValue = 1
+            }
+        }
+    }
+
+    func setProbs(home: Double?, draw: Double?, away: Double?) {
+        guard let h = home, let d = draw, let a = away else {
+            barTrack.isHidden = true
+            return
+        }
+        barTrack.isHidden = false
+        let w = barTrack.bounds.width
+        let total = max(1, h + d + a)
+        let hw = w * h / total
+        let dw = w * d / total
+        NSAnimationContext.runAnimationGroup { ctx in
+            ctx.duration = 0.5
+            ctx.allowsImplicitAnimation = true
+            barHome.frame = NSRect(x: 0, y: 0, width: hw, height: 3)
+            barDraw.frame = NSRect(x: hw, y: 0, width: dw, height: 3)
+            barAway.frame = NSRect(x: hw + dw, y: 0, width: w - hw - dw, height: 3)
+        }
+    }
+
+    func celebrateGoal() {
+        goalSound?.play()
+        mascotView.image = mascotKick
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) { [weak self] in
+            self?.mascotView.image = self?.mascotIdle
+        }
+        guard !isExpanded else { return }
+        let big = NSSize(width: COLLAPSED.width + 44, height: COLLAPSED.height + 8)
         NSAnimationContext.runAnimationGroup { ctx in
             ctx.duration = 0.18
-            island.animator().setFrame(
-                NSRect(x: f.midX - bigger.width / 2, y: f.maxY - bigger.height,
-                       width: bigger.width, height: bigger.height),
-                display: true
-            )
+            ctx.timingFunction = CAMediaTimingFunction(controlPoints: 0.3, 1.4, 0.6, 1)
+            panel.animator().setFrame(targetFrame(big), display: true)
         } completionHandler: {
             NSAnimationContext.runAnimationGroup { ctx in
-                ctx.duration = 0.25
-                self.island.animator().setFrame(
-                    NSRect(x: f.midX - self.collapsed.width / 2, y: f.maxY - self.collapsed.height,
-                           width: self.collapsed.width, height: self.collapsed.height),
-                    display: true
-                )
+                ctx.duration = 0.3
+                ctx.timingFunction = CAMediaTimingFunction(name: .easeOut)
+                self.panel.animator().setFrame(self.targetFrame(COLLAPSED), display: true)
             }
         }
     }

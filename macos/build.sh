@@ -26,6 +26,9 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
 </plist>
 PLIST
 
+# Mascot frames and the 8-bit chime
+cp assets/mascot-idle.png assets/mascot-kick.png assets/goal.wav "$APP/Contents/Resources/" 2>/dev/null || true
+
 # App icon from the shared mark
 if command -v iconutil >/dev/null && [ -f ../public/icon-512.png ]; then
   mkdir -p AppIcon.iconset

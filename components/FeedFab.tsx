@@ -12,7 +12,7 @@ export default function FeedFab() {
         as={Link}
         href="/feed"
         radius="full"
-        className="pointer-events-auto bg-foreground font-semibold text-background shadow-lg"
+        className="font-pixel pointer-events-auto bg-foreground text-background shadow-lg"
         startContent={<Icon icon="solar:play-stream-bold" width={17} />}
       >
         Moments
