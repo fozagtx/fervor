@@ -6,8 +6,8 @@ import Flag from "./Flag";
 import { COLORS } from "./WaveChart";
 
 /**
- * Compact scoreboard for the floating popup AND for /mini/[id] in a tab.
- * Full-bleed dark stage — no mascot, no chrome junk.
+ * Dense mini scoreboard — white, tight, no empty vertical space.
+ * Built for the popup; also fine as /mini/[id].
  */
 export default function MiniScore({ fixtureId }: { fixtureId: number }) {
   const router = useRouter();
@@ -18,9 +18,9 @@ export default function MiniScore({ fixtureId }: { fixtureId: number }) {
     return (
       <main
         data-torq-mini
-        className="flex h-dvh w-full items-center justify-center bg-black"
+        className="flex h-[140px] w-full items-center justify-center bg-white"
       >
-        <span className="live-dot inline-block h-2 w-2 rounded-full bg-emerald-400" />
+        <span className="live-dot inline-block h-2 w-2 rounded-full bg-emerald-500" />
       </main>
     );
   }
@@ -28,11 +28,10 @@ export default function MiniScore({ fixtureId }: { fixtureId: number }) {
   const g = match.gameState.toLowerCase();
   const finished = /(ft|full|final|ended|finish)/.test(g);
   const live =
-    !finished &&
-    !/(sched|await|not|pre)/.test(g) &&
-    match.probs.length > 0;
+    !finished && !/(sched|await|not|pre)/.test(g) && match.probs.length > 0;
   const latest = match.probs[match.probs.length - 1];
   const showScore = live || finished;
+  const hasMarket = latest && (latest.home > 0 || latest.away > 0);
 
   return (
     <main
@@ -46,34 +45,31 @@ export default function MiniScore({ fixtureId }: { fixtureId: number }) {
           router.push(`/match/${fixtureId}`);
         }
       }}
-      className="flex h-dvh w-full cursor-pointer flex-col justify-center gap-3 bg-black px-5 py-4 text-white outline-none select-none"
+      className="box-border flex w-full cursor-pointer flex-col gap-1.5 bg-white px-3 py-2.5 text-zinc-900 outline-none select-none"
       aria-label={`${match.home} ${match.scoreHome}–${match.scoreAway} ${match.away}. Open full match.`}
     >
-      {/* Teams + score */}
-      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
-        <div className="flex min-w-0 flex-col items-center gap-1.5">
-          <Flag team={match.home} size="lg" />
-          <span className="w-full truncate text-center text-xs font-semibold tracking-tight">
-            {match.home}
-          </span>
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+        <div className="flex min-w-0 items-center gap-1.5">
+          <Flag team={match.home} size="sm" />
+          <span className="truncate text-xs font-semibold">{match.home}</span>
         </div>
 
         <div className="flex flex-col items-center px-1">
-          <p className="font-mono text-4xl font-bold tabular-nums leading-none tracking-tight">
+          <p className="font-mono text-2xl font-bold tabular-nums leading-none">
             {showScore ? (
               <>
                 {match.scoreHome}
-                <span className="px-1.5 text-white/25">–</span>
+                <span className="px-1 text-zinc-300">–</span>
                 {match.scoreAway}
               </>
             ) : (
-              <span className="text-2xl font-medium text-white/40">vs</span>
+              <span className="text-lg font-medium text-zinc-400">vs</span>
             )}
           </p>
-          <span className="mt-1.5 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-white/40">
+          <span className="mt-0.5 font-mono text-[10px] font-semibold uppercase tracking-wide text-zinc-400">
             {live ? (
-              <span className="inline-flex items-center gap-1 text-emerald-400">
-                <span className="live-dot inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
+              <span className="inline-flex items-center gap-1 text-emerald-600">
+                <span className="live-dot inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
                 {match.minute != null ? `${Math.floor(match.minute)}′` : "LIVE"}
               </span>
             ) : finished ? (
@@ -87,30 +83,27 @@ export default function MiniScore({ fixtureId }: { fixtureId: number }) {
           </span>
         </div>
 
-        <div className="flex min-w-0 flex-col items-center gap-1.5">
-          <Flag team={match.away} size="lg" />
-          <span className="w-full truncate text-center text-xs font-semibold tracking-tight">
-            {match.away}
-          </span>
+        <div className="flex min-w-0 items-center justify-end gap-1.5">
+          <span className="truncate text-right text-xs font-semibold">{match.away}</span>
+          <Flag team={match.away} size="sm" />
         </div>
       </div>
 
-      {/* Win % bar — only when we have a real market */}
-      {latest && (latest.home > 0 || latest.away > 0) && (
-        <div className="flex items-center gap-2">
+      {hasMarket && (
+        <div className="flex items-center gap-1.5">
           <span
-            className="w-8 shrink-0 text-right font-mono text-[11px] font-semibold tabular-nums"
+            className="w-7 shrink-0 text-right font-mono text-[10px] font-semibold tabular-nums"
             style={{ color: COLORS.home }}
           >
             {latest.home.toFixed(0)}%
           </span>
-          <div className="flex h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-white/10">
+          <div className="flex h-1 min-w-0 flex-1 overflow-hidden rounded-full bg-zinc-100">
             <div
               style={{ width: `${latest.home}%`, background: COLORS.home }}
               className="transition-all duration-700"
             />
             <div
-              style={{ width: `${latest.draw}%`, background: COLORS.draw, opacity: 0.5 }}
+              style={{ width: `${latest.draw}%`, background: COLORS.draw, opacity: 0.55 }}
               className="transition-all duration-700"
             />
             <div
@@ -119,7 +112,7 @@ export default function MiniScore({ fixtureId }: { fixtureId: number }) {
             />
           </div>
           <span
-            className="w-8 shrink-0 font-mono text-[11px] font-semibold tabular-nums"
+            className="w-7 shrink-0 font-mono text-[10px] font-semibold tabular-nums"
             style={{ color: COLORS.away }}
           >
             {latest.away.toFixed(0)}%

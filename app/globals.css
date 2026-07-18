@@ -34,20 +34,20 @@ body {
   color: #18181b;
 }
 
-/* /mini scoreboard — pure black stage, no app chrome bleed */
+/* /mini — white, tight, no forced full-viewport stretch */
 html:has([data-torq-mini]),
 body:has([data-torq-mini]) {
   margin: 0 !important;
-  min-height: 100% !important;
-  height: 100% !important;
+  min-height: 0 !important;
+  height: auto !important;
   overflow: hidden !important;
-  background: #000000 !important;
-  color: #ffffff !important;
-  color-scheme: dark;
+  background: #ffffff !important;
+  color: #18181b !important;
+  color-scheme: light;
 }
 
 body:has([data-torq-mini]) [data-overlay-container] {
-  height: 100%;
+  height: auto;
 }
 
 .dark body {

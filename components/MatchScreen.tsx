@@ -137,7 +137,7 @@ export default function MatchScreen({
                 className="hidden border-default-300 text-default-500 sm:flex"
                 startContent={<Icon icon="solar:widget-add-linear" width={14} />}
                 onPress={() =>
-                  window.open(`/mini/${fixtureId}`, "torq-mini", "width=420,height=180,resizable=yes")
+                  window.open(`/mini/${fixtureId}`, "torq-mini", "width=380,height=110,resizable=yes")
                 }
               >
                 Mini
