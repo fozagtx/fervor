@@ -1,8 +1,8 @@
-# Match Pulse
+# Fervor
 
 A live World Cup second-screen app built on TxLINE's real-time consensus odds and the TxOracle program on Solana.
 
-Fans open Match Pulse on their phone during a match and watch the game's heartbeat: a live win-probability river computed from the same demargined odds the bookmakers trade on, moments generated from market movement, a prediction game scored against the real feed, and full match replays after the whistle. Every scoreline is provable on-chain. No betting, no sign-up, no crypto knowledge required.
+Fans open Fervor on their phone during a match and watch the game's heartbeat: a live win-probability river computed from the same demargined odds the bookmakers trade on, moments generated from market movement, a prediction game scored against the real feed, and full match replays after the whistle. Every scoreline is provable on-chain. No betting, no sign-up, no crypto knowledge required.
 
 ## How It Works
 

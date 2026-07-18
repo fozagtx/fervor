@@ -51,14 +51,27 @@ export default function MatchScreen({ fixtureId }: { fixtureId: number }) {
   const canReplay = finished || (!!match && match.probs.length === 0 && match.startTime < Date.now() - 2 * 3600000);
   const isLive = !!match && !finished && !replay && !/(sched|await)/.test(g) && match.probs.length > 0;
 
+  // A goal you can feel: vibrate on new goals during live viewing or replay
+  useEffect(() => {
+    if (!match || typeof navigator === "undefined" || !("vibrate" in navigator)) return;
+    const goals = match.events.filter((e) => e.kind === "goal");
+    const last = goals[goals.length - 1];
+    if (!last) return;
+    const seenKey = `fervor-buzz-${fixtureId}`;
+    const seen = sessionStorage.getItem(seenKey);
+    if (seen === last.id) return;
+    sessionStorage.setItem(seenKey, last.id);
+    if (seen !== null && (isLive || replay)) navigator.vibrate([60, 40, 120]);
+  }, [match, match?.events.length, fixtureId, isLive, replay]);
+
   // The tab itself shows the live score
   useEffect(() => {
     if (!match) return;
     document.title = isLive
-      ? `● LIVE ${match.scoreHome}–${match.scoreAway} · ${match.home} vs ${match.away} — Match Pulse`
-      : `${match.home} vs ${match.away} — Match Pulse`;
+      ? `● LIVE ${match.scoreHome}–${match.scoreAway} · ${match.home} vs ${match.away} — Fervor`
+      : `${match.home} vs ${match.away} — Fervor`;
     return () => {
-      document.title = "Match Pulse — the heartbeat of the World Cup";
+      document.title = "Fervor — the heartbeat of the World Cup";
     };
   }, [match, isLive, match?.scoreHome, match?.scoreAway]);
 
@@ -79,17 +92,31 @@ export default function MatchScreen({ fixtureId }: { fixtureId: number }) {
         </Card>
       ) : (
         <>
-          <Button
-            as={Link}
-            href="/matches"
-            size="sm"
-            radius="full"
-            variant="light"
-            className="w-fit -translate-x-2 text-default-500"
-            startContent={<Icon icon="solar:alt-arrow-left-linear" width={15} />}
-          >
-            All matches
-          </Button>
+          <div className="flex items-center justify-between">
+            <Button
+              as={Link}
+              href="/matches"
+              size="sm"
+              radius="full"
+              variant="light"
+              className="-translate-x-2 text-default-500"
+              startContent={<Icon icon="solar:alt-arrow-left-linear" width={15} />}
+            >
+              All matches
+            </Button>
+            <Button
+              size="sm"
+              radius="full"
+              variant="bordered"
+              className="hidden border-default-300 text-default-500 sm:flex"
+              startContent={<Icon icon="solar:widget-add-linear" width={14} />}
+              onPress={() =>
+                window.open(`/mini/${fixtureId}`, "fervor-mini", "width=380,height=150,resizable=yes")
+              }
+            >
+              Mini scoreboard
+            </Button>
+          </div>
 
           <ScoreHeader match={match} replay={replay} />
 

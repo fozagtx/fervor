@@ -2,8 +2,10 @@
 
 import { Card, CardBody, Skeleton } from "@heroui/react";
 import { Icon } from "@iconify/react";
+import FeedFab from "@/components/FeedFab";
 import TopBar from "@/components/TopBar";
 import MatchCard from "@/components/MatchCard";
+import { favScore, useFavorites } from "@/lib/favorites";
 import { useMatchStream } from "@/lib/useMatchStream";
 import type { MatchState } from "@/lib/txline/types";
 
@@ -17,17 +19,19 @@ function bucket(m: MatchState): "live" | "upcoming" | "finished" {
 
 export default function Home() {
   const { matches, connected } = useMatchStream();
+  const { favorites, toggle } = useFavorites();
   const all = [...matches.values()];
-  const live = all.filter((m) => bucket(m) === "live");
+  const live = all.filter((m) => bucket(m) === "live").sort((a, b) => favScore(b, favorites) - favScore(a, favorites));
   const upcoming = all
     .filter((m) => bucket(m) === "upcoming")
-    .sort((a, b) => a.startTime - b.startTime);
+    .sort((a, b) => favScore(b, favorites) - favScore(a, favorites) || a.startTime - b.startTime);
   const finished = all
     .filter((m) => bucket(m) === "finished")
-    .sort((a, b) => b.startTime - a.startTime);
+    .sort((a, b) => favScore(b, favorites) - favScore(a, favorites) || b.startTime - a.startTime);
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-6 sm:px-6 sm:py-10">
+      <FeedFab />
       <TopBar live={live.length > 0} connected={connected} />
 
       <div className="flex flex-col gap-1 px-1">
@@ -54,7 +58,7 @@ export default function Home() {
         <section className="flex flex-col gap-3">
           <SectionTitle icon="solar:play-stream-bold-duotone" title="Live now" accent />
           {live.map((m) => (
-            <MatchCard key={m.fixtureId} match={m} />
+            <MatchCard key={m.fixtureId} match={m} favorites={favorites} onToggleFavorite={toggle} />
           ))}
         </section>
       )}
@@ -63,7 +67,7 @@ export default function Home() {
         <section className="flex flex-col gap-3">
           <SectionTitle icon="solar:calendar-bold-duotone" title="Upcoming" />
           {upcoming.slice(0, 8).map((m) => (
-            <MatchCard key={m.fixtureId} match={m} />
+            <MatchCard key={m.fixtureId} match={m} favorites={favorites} onToggleFavorite={toggle} />
           ))}
         </section>
       )}
@@ -72,7 +76,7 @@ export default function Home() {
         <section className="flex flex-col gap-3">
           <SectionTitle icon="solar:flag-2-bold-duotone" title="Recent · tap to replay" />
           {finished.slice(0, 10).map((m) => (
-            <MatchCard key={m.fixtureId} match={m} />
+            <MatchCard key={m.fixtureId} match={m} favorites={favorites} onToggleFavorite={toggle} />
           ))}
         </section>
       )}

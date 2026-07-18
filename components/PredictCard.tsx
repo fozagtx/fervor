@@ -74,7 +74,7 @@ export default function PredictCard({ match }: { match: MatchState }) {
   };
 
   const share = async () => {
-    const text = `I'm ${stats.streak > 0 ? `on a ${stats.streak}-call streak` : `${stats.wins}/${stats.plays}`} against the World Cup betting market on Match Pulse ⚽📈`;
+    const text = `I'm ${stats.streak > 0 ? `on a ${stats.streak}-call streak` : `${stats.wins}/${stats.plays}`} against the World Cup betting market on Fervor ⚽📈`;
     try {
       if (navigator.share) await navigator.share({ text, url: location.origin });
       else await navigator.clipboard.writeText(`${text} ${location.origin}`);

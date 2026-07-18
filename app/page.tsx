@@ -3,8 +3,10 @@
 import { Button, Card, CardBody, Chip } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import Link from "next/link";
+import FeedFab from "@/components/FeedFab";
 import TopBar from "@/components/TopBar";
 import MatchCard from "@/components/MatchCard";
+import { favScore, useFavorites } from "@/lib/favorites";
 import { useMatchStream } from "@/lib/useMatchStream";
 import type { MatchState } from "@/lib/txline/types";
 
@@ -15,11 +17,12 @@ function isLive(m: MatchState): boolean {
 
 export default function Landing() {
   const { matches, connected } = useMatchStream();
+  const { favorites, toggle } = useFavorites();
   const all = [...matches.values()];
   const live = all.filter(isLive);
   const upNext = all
     .filter((m) => !isLive(m) && /sched/.test(m.gameState.toLowerCase()))
-    .sort((a, b) => a.startTime - b.startTime)
+    .sort((a, b) => favScore(b, favorites) - favScore(a, favorites) || a.startTime - b.startTime)
     .slice(0, 2);
   const featured = live.length > 0 ? live.slice(0, 2) : upNext;
   const recent = all
@@ -28,6 +31,7 @@ export default function Landing() {
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-4 py-6 sm:px-6 sm:py-10">
+      <FeedFab />
       <TopBar live={live.length > 0} connected={connected} />
 
       <section className="flex flex-col gap-4 px-1 pt-4 sm:pt-8">
@@ -84,7 +88,7 @@ export default function Landing() {
             </h2>
           </div>
           {featured.map((m) => (
-            <MatchCard key={m.fixtureId} match={m} />
+            <MatchCard key={m.fixtureId} match={m} favorites={favorites} onToggleFavorite={toggle} />
           ))}
         </section>
       )}

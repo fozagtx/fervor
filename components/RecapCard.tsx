@@ -19,7 +19,7 @@ export default function RecapCard({ match }: { match: MatchState }) {
     const swingText = swing
       ? `Biggest market swing: ${swing.side === "home" ? match.home : match.away} ${swing.delta > 0 ? "+" : ""}${swing.delta}pp in 5 min.`
       : "";
-    const text = `${match.home} ${match.scoreHome}–${match.scoreAway} ${match.away}. Drama peak ${peak}/100. ${swingText} Felt on Match Pulse ⚽📈`;
+    const text = `${match.home} ${match.scoreHome}–${match.scoreAway} ${match.away}. Drama peak ${peak}/100. ${swingText} Felt on Fervor ⚽📈`;
     try {
       if (navigator.share) await navigator.share({ text, url: location.origin });
       else await navigator.clipboard.writeText(`${text} ${location.origin}`);

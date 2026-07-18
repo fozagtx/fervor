@@ -1,10 +1,10 @@
-# Match Pulse — Submission Notes
+# Fervor — Submission Notes
 
 **Track:** TxODDS Consumer and Fan Experiences (World Cup Track)
 
 ## Core idea
 
-Most fans watch with a phone in their hand. The one thing the big operators always had that fans never did is the live market — the single most information-dense signal about a match. Match Pulse turns TxLINE's consensus odds into a fan product: a live win-probability river you can feel the game through, moments generated from market movement, a prediction streak game scored against the real feed, and full match replays after the whistle.
+Most fans watch with a phone in their hand. The one thing the big operators always had that fans never did is the live market — the single most information-dense signal about a match. Fervor turns TxLINE's consensus odds into a fan product: a live win-probability river you can feel the game through, moments generated from market movement, a prediction streak game scored against the real feed, and full match replays after the whistle.
 
 ## Product highlights
 

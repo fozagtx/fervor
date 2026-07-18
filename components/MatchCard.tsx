@@ -5,6 +5,7 @@ import { Icon } from "@iconify/react";
 import { useRouter } from "next/navigation";
 import type { MatchState } from "@/lib/txline/types";
 import { dramaScore } from "@/lib/drama";
+import { useCountdown } from "@/lib/favorites";
 import { flagOf } from "@/lib/flags";
 import DramaMeter from "./DramaMeter";
 import { COLORS } from "./PulseChart";
@@ -18,11 +19,20 @@ function isFinished(m: MatchState): boolean {
   return /(ft|full|final|ended|finish)/.test(m.gameState.toLowerCase());
 }
 
-export default function MatchCard({ match }: { match: MatchState }) {
+export default function MatchCard({
+  match,
+  favorites = [],
+  onToggleFavorite,
+}: {
+  match: MatchState;
+  favorites?: string[];
+  onToggleFavorite?: (team: string) => void;
+}) {
   const router = useRouter();
   const live = isLive(match);
   const finished = isFinished(match);
   const latest = match.probs[match.probs.length - 1];
+  const countdown = useCountdown(match.startTime);
 
   return (
     <Card
@@ -39,8 +49,18 @@ export default function MatchCard({ match }: { match: MatchState }) {
         <div className="flex items-center gap-3">
           {/* Teams, stacked like a fixture row */}
           <div className="flex min-w-0 flex-1 flex-col gap-1">
-            <TeamLine name={match.home} score={live || finished ? match.scoreHome : null} />
-            <TeamLine name={match.away} score={live || finished ? match.scoreAway : null} />
+            <TeamLine
+              name={match.home}
+              score={live || finished ? match.scoreHome : null}
+              favorite={favorites.includes(match.home)}
+              onToggleFavorite={onToggleFavorite}
+            />
+            <TeamLine
+              name={match.away}
+              score={live || finished ? match.scoreAway : null}
+              favorite={favorites.includes(match.away)}
+              onToggleFavorite={onToggleFavorite}
+            />
           </div>
 
           {/* Right rail: state */}
@@ -62,6 +82,8 @@ export default function MatchCard({ match }: { match: MatchState }) {
               </>
             ) : finished ? (
               <span className="text-tiny font-medium uppercase text-default-400">FT</span>
+            ) : countdown ? (
+              <span className="font-mono text-tiny font-semibold text-primary">{countdown}</span>
             ) : (
               <span className="text-tiny text-default-400">
                 {new Date(match.startTime).toLocaleString(undefined, {
@@ -102,11 +124,39 @@ export default function MatchCard({ match }: { match: MatchState }) {
   );
 }
 
-function TeamLine({ name, score }: { name: string; score: number | null }) {
+function TeamLine({
+  name,
+  score,
+  favorite,
+  onToggleFavorite,
+}: {
+  name: string;
+  score: number | null;
+  favorite?: boolean;
+  onToggleFavorite?: (team: string) => void;
+}) {
   return (
     <div className="flex items-center gap-2">
       <span className="w-5 shrink-0 text-medium leading-none">{flagOf(name)}</span>
-      <span className="min-w-0 flex-1 truncate text-small font-medium">{name}</span>
+      <span className="min-w-0 truncate text-small font-medium">{name}</span>
+      {onToggleFavorite && (
+        <button
+          aria-label={favorite ? `Unfollow ${name}` : `Follow ${name}`}
+          className="shrink-0 p-0.5"
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            onToggleFavorite(name);
+          }}
+        >
+          <Icon
+            icon={favorite ? "solar:star-bold" : "solar:star-linear"}
+            width={13}
+            className={favorite ? "text-warning" : "text-default-300"}
+          />
+        </button>
+      )}
+      <span className="min-w-0 flex-1" />
       {score !== null && (
         <span className="shrink-0 pr-1 font-mono text-small font-semibold tabular-nums">{score}</span>
       )}

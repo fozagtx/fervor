@@ -30,7 +30,7 @@ export default function TopBar({
       <Link href="/" className="flex min-w-0 flex-1 items-center gap-3">
         <Logo size={38} />
         <div className="flex min-w-0 flex-col">
-          <p className="whitespace-nowrap text-medium font-semibold leading-tight">Match Pulse</p>
+          <p className="whitespace-nowrap text-medium font-semibold leading-tight">Fervor</p>
           <p className="truncate text-tiny leading-tight text-default-400">World Cup, second by second</p>
         </div>
       </Link>

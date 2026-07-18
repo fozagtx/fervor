@@ -4,7 +4,7 @@ export default function Logo({ size = 38 }: { size?: number }) {
       width={size}
       height={size}
       viewBox="0 0 64 64"
-      aria-label="Match Pulse"
+      aria-label="Fervor"
       className="shrink-0"
     >
       <defs>

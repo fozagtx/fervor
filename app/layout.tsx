@@ -16,15 +16,18 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Match Pulse — the heartbeat of the World Cup",
+  title: "Fervor — the heartbeat of the World Cup",
   description:
     "Live win chances, momentum swings and match moments for every World Cup game. Watch the market move, call the swings, relive the drama.",
   openGraph: {
-    title: "Match Pulse",
+    title: "Fervor",
     description:
       "Every match has a heartbeat. Live win chances that move with every goal.",
     type: "website",
   },
+  manifest: "/manifest.webmanifest",
+  appleWebApp: { capable: true, title: "Fervor", statusBarStyle: "default" },
+  icons: { apple: "/apple-touch-icon.png" },
 };
 
 export const viewport: Viewport = {
