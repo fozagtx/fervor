@@ -240,34 +240,24 @@ export function startReplay(
   speed: number,
   send: (msg: StreamMessage) => void
 ): () => void {
+  // Unknown fixture: refuse rather than invent team names
   const source = hub.matches.get(fixtureId);
-  const match: MatchState = source
-    ? {
-        ...source,
-        gameState: "Replay",
-        statusId: undefined,
-        scoreHome: 0,
-        scoreAway: 0,
-        minute: 0,
-        probs: [],
-        events: [],
-      }
-    : {
-        fixtureId,
-        competition: "FIFA World Cup",
-        home: "Home",
-        away: "Away",
-        homeId: 0,
-        awayId: 0,
-        p1IsHome: true,
-        startTime: Date.now(),
-        gameState: "Replay",
-        scoreHome: 0,
-        scoreAway: 0,
-        probs: [],
-        events: [],
-        lastUpdate: Date.now(),
-      };
+  if (!source) {
+    send({ type: "init", matches: [] });
+    send({ type: "replay_done" });
+    return () => {};
+  }
+
+  const match: MatchState = {
+    ...source,
+    gameState: "Replay",
+    statusId: undefined,
+    scoreHome: 0,
+    scoreAway: 0,
+    minute: 0,
+    probs: [],
+    events: [],
+  };
 
   send({ type: "init", matches: [match] });
 
