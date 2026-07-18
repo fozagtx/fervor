@@ -27,9 +27,10 @@ export default function ScoreHeader({ match, replay }: { match: MatchState; repl
               size="sm"
               variant="flat"
               color="primary"
+              className="font-semibold"
               startContent={<span className="live-dot ml-1 inline-block h-2 w-2 rounded-full bg-primary" />}
             >
-              {match.minute ? `${Math.floor(match.minute)}′` : "LIVE"}
+              {match.minute ? `LIVE · ${Math.floor(match.minute)}′` : "LIVE"}
             </Chip>
           ) : (
             <Chip size="sm" variant="flat" className="text-default-500">

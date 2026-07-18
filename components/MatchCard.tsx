@@ -27,7 +27,11 @@ export default function MatchCard({ match }: { match: MatchState }) {
     <Card
       isPressable
       shadow="sm"
-      className="w-full border-small border-default-200"
+      className={`w-full border-small ${
+        live
+          ? "border-primary-300 shadow-[0_0_18px_-4px_rgba(15,138,82,0.35)] dark:shadow-[0_0_18px_-4px_rgba(16,185,129,0.4)]"
+          : "border-default-200"
+      }`}
       onPress={() => router.push(`/match/${match.fixtureId}`)}
     >
       <CardBody className="gap-3 p-4">

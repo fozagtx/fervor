@@ -2,7 +2,7 @@
 
 import { Button, Card, CardBody, CardHeader, Chip, Skeleton } from "@heroui/react";
 import { Icon } from "@iconify/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import TopBar from "@/components/TopBar";
 import ScoreHeader from "@/components/ScoreHeader";
 import PulseChart from "@/components/PulseChart";
@@ -25,10 +25,22 @@ export default function MatchScreen({ fixtureId }: { fixtureId: number }) {
   const g = match?.gameState.toLowerCase() ?? "";
   const finished = /(ft|full|final|ended|finish)/.test(g);
   const canReplay = finished || (!!match && match.probs.length === 0 && match.startTime < Date.now() - 2 * 3600000);
+  const isLive = !!match && !finished && !replay && !/(sched|await)/.test(g) && match.probs.length > 0;
+
+  // The tab itself shows the live score
+  useEffect(() => {
+    if (!match) return;
+    document.title = isLive
+      ? `● LIVE ${match.scoreHome}–${match.scoreAway} · ${match.home} vs ${match.away} — Match Pulse`
+      : `${match.home} vs ${match.away} — Match Pulse`;
+    return () => {
+      document.title = "Match Pulse — the heartbeat of the World Cup";
+    };
+  }, [match, isLive, match?.scoreHome, match?.scoreAway]);
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-6 sm:px-6 sm:py-10">
-      <TopBar live={!!match && match.probs.length > 0 && !finished && !replay} connected={connected} />
+      <TopBar live={isLive} connected={connected} />
 
       {!match ? (
         <Card shadow="sm" className="border-small border-default-200">
