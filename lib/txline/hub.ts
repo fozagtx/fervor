@@ -160,6 +160,7 @@ class MatchHub {
     };
     es.onmessage = (ev) => {
       entry.lastMessageAt = Date.now();
+      this.lastError = null; // stream is healthy again
       try {
         const data = JSON.parse(ev.data);
         this.record(kind, data);
