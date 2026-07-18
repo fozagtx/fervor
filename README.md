@@ -1,8 +1,26 @@
 # Torq
 
+**Live MVP (public):** https://fervor.up.railway.app  
+**Repo:** https://github.com/fozagtx/fervor  
+**Track:** TxODDS · Consumer & Fan Experiences (World Cup)
+
+> **Originality:** First second-screen that combines consensus-odds **Drama Score** + a playable **Beat the Market** mini-game + **verifiable on-chain outcomes** — without requiring betting.
+
 A live World Cup second-screen app built on TxLINE's real-time consensus odds and the TxOracle program on Solana.
 
 Fans open Torq on their phone during a match and watch the game's heartbeat: a live win-probability river computed from the same demargined odds the bookmakers trade on, moments generated from market movement, a prediction game scored against the real feed, and full match replays after the whistle. Every scoreline is provable on-chain. No betting, no sign-up, no crypto knowledge required.
+
+## Judges — try it now
+
+| Step | URL |
+|---|---|
+| Open the app | https://fervor.up.railway.app |
+| Match lobby (TikTok-style reel) | https://fervor.up.railway.app/matches |
+| Moments feed | https://fervor.up.railway.app/feed |
+| Leaderboard | https://fervor.up.railway.app/leaders |
+| Smoke check (CI-friendly) | `pnpm smoke` → hits live routes + SSE |
+
+Verified working: home, lobby, feed, leaders, `/api/matches`, SSE `/api/stream`, match / embed / watch / verify per fixture.
 
 ## How It Works
 
@@ -99,6 +117,13 @@ Environment variables:
 - **Restart-proof:** feed history rehydrates from disk on boot; stream watchdog reconnects silent feeds; known results ship in the bundle so cold boots show real scores instantly.
 - **Light and dark themes:** light by default, persisted toggle.
 
+## Mobile, PWA & accessibility
+
+- **Mobile-first:** lobby is a full-bleed vertical reel; match screens use large tap targets for 1X2 / Beat calls; safe-area aware layout.
+- **Installable PWA:** `manifest.webmanifest` + apple-touch icons — Add to Home Screen on iOS/Android (“Install Torq”).
+- **Guest by default:** no wallet required; Phantom is optional identity only (no txs).
+- **A11y basics:** semantic controls with `aria-label`s on theme, mute, wallet, favorites, mascot; light theme default for outdoor stadium readability; live / drama status also conveyed in text and labels (not color alone).
+
 ## Torq for macOS
 
 A native menu-bar companion keeps the most interesting match in your menu bar — flags, score and minute — and clicking it drops down the island mini scoreboard, streaming live.
@@ -171,6 +196,8 @@ X / Tweet / social links omitted (we don't have them).
 ### Briefly explain your Project
 
 Torq is a World Cup second-screen app for fans with a phone in hand. It turns TxLINE consensus odds into a live win-probability “wave,” drama ranking, Beat-the-market skill calls (no wagering), GoalBlast moments, full match replay, a macOS Dynamic Island companion, and one-tap on-chain scoreline proof via TxOracle — so the market’s heartbeat is something you can feel, not a sportsbook.
+
+**Originality for judges:** First second-screen that combines consensus odds Drama Score + a playable mini-game + verifiable outcomes without requiring betting.
 
 ### Share your team's experience using the TxLINE API
 

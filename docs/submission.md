@@ -2,30 +2,43 @@
 
 **Track:** TxODDS Consumer and Fan Experiences (World Cup Track)
 
+**Live MVP (verified):** https://fervor.up.railway.app  
+
+> **Originality:** First second-screen that combines consensus-odds **Drama Score** + a playable **Beat the Market** mini-game + **verifiable on-chain outcomes** — without requiring betting.
+
 ## Earn form — ready to paste
 
-X / Tweet fields omitted (none). Demo video URL still TBD.
+X / Tweet fields omitted (none). Demo video URL still TBD (you record).
 
 | Field | Value |
 |---|---|
 | Link to Your Submission | https://fervor.up.railway.app |
 | Project Title | Torq |
 | Live MVP | https://fervor.up.railway.app |
-| Demo Video | _TBD_ |
+| Demo Video | _TBD — your Loom/YouTube_ |
 | Repository | https://github.com/fozagtx/fervor |
-| Technical Documentation | https://github.com/fozagtx/fervor/blob/main/README.md |
+| Technical Documentation | https://github.com/fozagtx/fervor/blob/main/README.md · this file |
 
 **Briefly explain your Project**
 
 Torq is a World Cup second-screen app for fans with a phone in hand. It turns TxLINE consensus odds into a live win-probability “wave,” drama ranking, Beat-the-market skill calls (no wagering), GoalBlast moments, full match replay, a macOS Dynamic Island companion, and one-tap on-chain scoreline proof via TxOracle — so the market’s heartbeat is something you can feel, not a sportsbook.
 
-**Anything Else?** macOS island (`macos/`), embed `/embed/[id]`, watch links `/watch/[id]`, demo script `claudedocs/demo-script.md`.
+**Originality for judges:** First second-screen that combines consensus odds Drama Score + a playable mini-game + verifiable outcomes without requiring betting.
+
+**Anything Else?** macOS island (`macos/`), embed `/embed/[id]`, watch links `/watch/[id]`, PWA install, demo script `claudedocs/demo-script.md`, live smoke `pnpm smoke`.
 
 Same block lives in the root [README](../README.md#world-cup-track-submission).
 
 ## Core idea
 
 Most fans watch with a phone in their hand. The one thing the big operators always had that fans never did is the live market — the single most information-dense signal about a match. Torq turns TxLINE's consensus odds into a fan product: a live win-probability river you can feel the game through, moments generated from market movement, a prediction streak game scored against the real feed, and full match replays after the whistle.
+
+## Mobile / PWA / accessibility (for judges)
+
+- Mobile-first reel lobby + large tap targets; Add to Home Screen via `public/manifest.webmanifest`
+- Guest mode by default — zero crypto friction; Phantom optional for identity only
+- Controls labeled (`aria-label` on mute, theme, wallet, favorites); light default for outdoor use
+- Live smoke: `pnpm smoke` against the public Railway URL
 
 ## Product highlights
 
