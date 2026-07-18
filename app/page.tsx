@@ -14,7 +14,7 @@ function isLive(m: MatchState): boolean {
 }
 
 export default function Landing() {
-  const { matches } = useMatchStream();
+  const { matches, connected } = useMatchStream();
   const all = [...matches.values()];
   const live = all.filter(isLive);
   const upNext = all
@@ -28,7 +28,7 @@ export default function Landing() {
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-4 py-6 sm:px-6 sm:py-10">
-      <TopBar live={live.length > 0} />
+      <TopBar live={live.length > 0} connected={connected} />
 
       <section className="flex flex-col gap-4 px-1 pt-4 sm:pt-8">
         <div className="flex flex-col gap-3">

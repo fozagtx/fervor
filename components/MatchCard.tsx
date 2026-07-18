@@ -70,6 +70,13 @@ export default function MatchCard({ match }: { match: MatchState }) {
           </div>
         </div>
 
+        {!latest && !finished && (
+          <p className="text-tiny text-default-400">
+            <Icon icon="solar:clock-circle-linear" width={12} className="mr-1 inline" />
+            The market opens closer to kick-off
+          </p>
+        )}
+
         {latest && (
           <div className="flex flex-col gap-1.5">
             <div className="flex h-2 w-full overflow-hidden rounded-full bg-default-100">
