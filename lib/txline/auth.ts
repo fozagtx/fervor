@@ -196,13 +196,20 @@ async function subscribeAndActivate(jwt: string): Promise<AuthCache> {
   if (!res.ok) {
     throw new Error(`token/activate failed: ${res.status} ${await res.text()}`);
   }
-  const body = (await res.json().catch(() => null)) as
-    | { token?: string }
-    | string
-    | null;
-  const apiToken =
-    typeof body === "string" ? body : body?.token ?? String(body);
-  if (!apiToken) throw new Error("activation returned no token");
+  // Response is text/plain: the raw token string (may also arrive JSON-wrapped)
+  const raw = (await res.text()).trim();
+  let apiToken = raw.replace(/^"|"$/g, "");
+  try {
+    const parsed = JSON.parse(raw);
+    if (typeof parsed === "string") apiToken = parsed;
+    else if (parsed && typeof parsed === "object" && typeof parsed.token === "string")
+      apiToken = parsed.token;
+  } catch {
+    // raw text token — already handled
+  }
+  if (!apiToken || apiToken === "null") {
+    throw new Error(`activation returned no token (body: ${raw.slice(0, 120)})`);
+  }
   console.log("[txline] API token activated");
 
   return {

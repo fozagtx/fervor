@@ -7,6 +7,8 @@ import type { MatchEvent } from "@/lib/txline/types";
 
 const KIND_META: Record<string, { icon: string; color: string }> = {
   goal: { icon: "solar:football-bold-duotone", color: "text-warning" },
+  goal_disallowed: { icon: "solar:close-circle-bold-duotone", color: "text-danger" },
+  var: { icon: "solar:videocamera-record-bold-duotone", color: "text-default-400" },
   card_red: { icon: "solar:card-bold-duotone", color: "text-danger" },
   card_yellow: { icon: "solar:card-bold-duotone", color: "text-warning" },
   corner: { icon: "solar:flag-bold-duotone", color: "text-default-400" },

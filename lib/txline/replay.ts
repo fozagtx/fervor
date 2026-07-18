@@ -1,7 +1,8 @@
 import fs from "fs";
 import path from "path";
-import { NETWORK, RECORDINGS_DIR } from "./config";
-import { extractScoreInfo, makeEvent, oddsToProbPoint } from "./normalize";
+import { API_BASE, NETWORK, RECORDINGS_DIR } from "./config";
+import { getAuth, renewJwt } from "./auth";
+import { applyScores, isInPlay, isMatchWinnerMarket, makeEvent, oddsToProbPoint } from "./normalize";
 import { hub } from "./hub";
 import type {
   MatchState,
@@ -10,22 +11,50 @@ import type {
   TxScores,
 } from "./types";
 
-interface RecordedLine {
-  t: number;
-  data: TxOddsPayload | TxScores;
-}
-
 interface TimelineItem {
   ts: number;
   kind: "odds" | "scores";
   data: TxOddsPayload | TxScores;
 }
 
-/**
- * Loads every recorded odds/scores line for a fixture across all recording
- * files, ordered by original feed timestamp.
- */
-function loadTimeline(fixtureId: number): TimelineItem[] {
+const replaysDir = () => path.join(RECORDINGS_DIR, NETWORK, "replays");
+const replayFile = (fixtureId: number) => path.join(replaysDir(), `${fixtureId}.jsonl`);
+
+// ---- Timeline sources ----
+
+/** Materialized replay file (fastest, curated). */
+function loadMaterialized(fixtureId: number): TimelineItem[] {
+  try {
+    const lines = fs.readFileSync(replayFile(fixtureId), "utf8").split("\n");
+    const items: TimelineItem[] = [];
+    for (const line of lines) {
+      if (!line.trim()) continue;
+      try {
+        items.push(JSON.parse(line) as TimelineItem);
+      } catch {
+        // skip malformed line
+      }
+    }
+    return items;
+  } catch {
+    return [];
+  }
+}
+
+function materialize(fixtureId: number, items: TimelineItem[]) {
+  try {
+    fs.mkdirSync(replaysDir(), { recursive: true });
+    fs.writeFileSync(
+      replayFile(fixtureId),
+      items.map((i) => JSON.stringify(i)).join("\n") + "\n"
+    );
+  } catch (e) {
+    console.error("[replay] materialize failed:", e);
+  }
+}
+
+/** Live-recording JSONL files written by the hub. */
+function loadRecordings(fixtureId: number): TimelineItem[] {
   const dir = path.join(RECORDINGS_DIR, NETWORK);
   const items: TimelineItem[] = [];
   let files: string[] = [];
@@ -37,23 +66,21 @@ function loadTimeline(fixtureId: number): TimelineItem[] {
   for (const file of files) {
     const kind = file.startsWith("odds-") ? "odds" : file.startsWith("scores-") ? "scores" : null;
     if (!kind) continue;
-    const lines = fs.readFileSync(path.join(dir, file), "utf8").split("\n");
-    for (const line of lines) {
+    let text = "";
+    try {
+      text = fs.readFileSync(path.join(dir, file), "utf8");
+    } catch {
+      continue;
+    }
+    for (const line of text.split("\n")) {
       if (!line.trim()) continue;
       try {
-        const rec = JSON.parse(line) as RecordedLine;
-        const fid =
-          kind === "odds"
-            ? (rec.data as TxOddsPayload).FixtureId
-            : (rec.data as TxScores).fixtureId;
-        if (fid !== fixtureId) continue;
-        const ts =
-          (kind === "odds"
-            ? (rec.data as TxOddsPayload).Ts
-            : (rec.data as TxScores).ts) || rec.t;
-        items.push({ ts, kind, data: rec.data });
+        const rec = JSON.parse(line) as { t: number; data: TxOddsPayload & TxScores };
+        if (rec.data.FixtureId !== fixtureId) continue;
+        if (kind === "odds" && !isMatchWinnerMarket(rec.data as TxOddsPayload)) continue;
+        items.push({ ts: rec.data.Ts || rec.t, kind, data: rec.data });
       } catch {
-        // skip malformed lines
+        // skip malformed line
       }
     }
   }
@@ -61,37 +88,123 @@ function loadTimeline(fixtureId: number): TimelineItem[] {
   return items;
 }
 
-/** Dev fallback: synthesize a timeline when no recording exists (sim mode). */
-function synthesizeTimeline(base: MatchState): TimelineItem[] {
+async function rawGet(pathAndQuery: string): Promise<string> {
+  const { jwt, apiToken } = await getAuth();
+  const doFetch = (t: string) =>
+    fetch(`${API_BASE}${pathAndQuery}`, {
+      headers: { Authorization: `Bearer ${t}`, "X-Api-Token": apiToken },
+    });
+  let res = await doFetch(jwt);
+  if (res.status === 401) res = await doFetch(await renewJwt());
+  if (!res.ok) throw new Error(`GET ${pathAndQuery} → ${res.status}`);
+  return res.text();
+}
+
+/** Some endpoints return JSON arrays, others SSE-framed `data:` lines. */
+function parseSseOrJson<T>(text: string): T[] {
+  const trimmed = text.trim();
+  if (!trimmed) return [];
+  if (trimmed.startsWith("[")) {
+    try {
+      return JSON.parse(trimmed) as T[];
+    } catch {
+      return [];
+    }
+  }
+  const out: T[] = [];
+  for (const line of trimmed.split("\n")) {
+    const m = line.match(/^data:\s*(\{.*\})\s*$/);
+    if (m) {
+      try {
+        out.push(JSON.parse(m[1]) as T);
+      } catch {
+        // skip malformed line
+      }
+    }
+  }
+  return out;
+}
+
+/**
+ * Backfills a full match timeline from the TxLINE historical APIs:
+ * scores via /scores/historical, odds by paging the 5-minute interval
+ * archive across the match window. Materialized to disk on success.
+ */
+async function backfillTimeline(fixtureId: number, startTime: number): Promise<TimelineItem[]> {
+  console.log(`[replay] backfilling fixture ${fixtureId}…`);
+  const items: TimelineItem[] = [];
+
+  const scores = parseSseOrJson<TxScores>(await rawGet(`/scores/historical/${fixtureId}`));
+  for (const s of scores) {
+    if (s.FixtureId !== fixtureId) continue;
+    items.push({ ts: s.Ts, kind: "scores", data: s });
+  }
+
+  // Odds archive: page 5-minute intervals from 15 min before kick-off to
+  // 2h40m after (covers extra time and shoot-outs).
+  const from = startTime - 15 * 60000;
+  const to = startTime + 160 * 60000;
+  const fetches: Promise<void>[] = [];
+  for (let t = from; t <= to; t += 5 * 60000) {
+    const epochDay = Math.floor(t / 86400000);
+    const hourOfDay = Math.floor((t % 86400000) / 3600000);
+    const interval = Math.floor((t % 3600000) / (5 * 60000));
+    fetches.push(
+      rawGet(`/odds/updates/${epochDay}/${hourOfDay}/${interval}`)
+        .then((text) => {
+          for (const o of parseSseOrJson<TxOddsPayload>(text)) {
+            if (o.FixtureId !== fixtureId || !isMatchWinnerMarket(o)) continue;
+            items.push({ ts: o.Ts, kind: "odds", data: o });
+          }
+        })
+        .catch(() => {
+          // missing interval pages are fine
+        })
+    );
+  }
+  await Promise.all(fetches);
+
+  items.sort((a, b) => a.ts - b.ts);
+  const oddsCount = items.filter((i) => i.kind === "odds").length;
+  console.log(`[replay] backfill done: ${items.length} items (${oddsCount} odds)`);
+  if (items.length > 20) materialize(fixtureId, items);
+  return items;
+}
+
+/** Dev fallback: synthesize a real-shaped timeline (sim mode only). */
+function synthesizeTimeline(fixtureId: number): TimelineItem[] {
   const items: TimelineItem[] = [];
   const start = Date.now() - 105 * 60000;
   let h = 38;
   let a = 34;
   const goalMinutes = [23, 57, 78];
-  let scoreH = 0;
-  let scoreA = 0;
+  let g1 = 0;
+  let g2 = 0;
+  const score = () => ({
+    Participant1: { Total: { Goals: g1 } },
+    Participant2: { Total: { Goals: g2 } },
+  });
+  const scores = (min: number, action: string, statusId: number, extra: Partial<TxScores> = {}): TxScores => ({
+    FixtureId: fixtureId,
+    Action: action,
+    Ts: start + min * 60000,
+    StatusId: statusId,
+    Clock: { Running: true, Seconds: Math.floor(min * 60) },
+    Score: score(),
+    Confirmed: true,
+    ...extra,
+  });
+
+  items.push({ ts: start, kind: "scores", data: scores(0, "kickoff", 2) });
   for (let min = 0; min <= 95; min += 0.5) {
-    const ts = start + min * 60000;
+    const statusId = min < 45 ? 2 : min < 47 ? 3 : min < 94 ? 4 : 5;
     if (goalMinutes.includes(min)) {
-      const side = Math.random() < 0.55 ? "h" : "a";
-      if (side === "h") {
-        scoreH += 1;
-        h = Math.min(90, h + 14);
-      } else {
-        scoreA += 1;
-        a = Math.min(90, a + 14);
-      }
+      if (Math.random() < 0.55) g1 += 1;
+      else g2 += 1;
       items.push({
-        ts,
+        ts: start + min * 60000,
         kind: "scores",
-        data: {
-          fixtureId: base.fixtureId,
-          gameState: min < 45 ? "1st Half" : "2nd Half",
-          ts,
-          scoreSoccer: { parti1: scoreH, parti2: scoreA },
-          inPlayInfo: { minute: min },
-          action: "goal",
-        } as unknown as TxScores,
+        data: scores(min, "goal", statusId, { Participant: g1 > g2 ? 1 : 2 }),
       });
     }
     h += (Math.random() - 0.5) * 2;
@@ -101,17 +214,18 @@ function synthesizeTimeline(base: MatchState): TimelineItem[] {
     const d = Math.max(4, 100 - h - a);
     const total = h + a + d;
     items.push({
-      ts,
+      ts: start + min * 60000,
       kind: "odds",
       data: {
-        FixtureId: base.fixtureId,
+        FixtureId: fixtureId,
         MessageId: `sim-${min}`,
-        Ts: ts,
-        Bookmaker: "Stable Price",
-        BookmakerId: 0,
-        SuperOddsType: "MO",
+        Ts: start + min * 60000,
+        Bookmaker: "TXLineStablePriceDemargined",
+        BookmakerId: 10021,
+        SuperOddsType: "1X2_PARTICIPANT_RESULT",
         InRunning: true,
-        PriceNames: ["1", "X", "2"],
+        MarketParameters: null,
+        PriceNames: ["part1", "draw", "part2"],
         Pct: [
           ((h / total) * 100).toFixed(3),
           ((d / total) * 100).toFixed(3),
@@ -120,19 +234,44 @@ function synthesizeTimeline(base: MatchState): TimelineItem[] {
       } as TxOddsPayload,
     });
   }
-  items.push({
-    ts: start + 96 * 60000,
-    kind: "scores",
-    data: {
-      fixtureId: base.fixtureId,
-      gameState: "Full Time",
-      ts: start + 96 * 60000,
-      scoreSoccer: { parti1: scoreH, parti2: scoreA },
-      inPlayInfo: { minute: 90 },
-      action: "fulltime",
-    } as unknown as TxScores,
-  });
+  items.push({ ts: start + 96 * 60000, kind: "scores", data: scores(96, "game_finalised", 100) });
   return items;
+}
+
+async function loadTimeline(fixtureId: number, startTime: number): Promise<TimelineItem[]> {
+  let timeline = loadMaterialized(fixtureId);
+  if (timeline.length > 20) return trimToMatch(timeline);
+  timeline = loadRecordings(fixtureId);
+  if (timeline.length > 20) return trimToMatch(timeline);
+  if (process.env.TXLINE_SIM === "1") return synthesizeTimeline(fixtureId);
+  try {
+    return trimToMatch(await backfillTimeline(fixtureId, startTime));
+  } catch (e) {
+    console.error("[replay] backfill failed:", e);
+    return timeline;
+  }
+}
+
+/**
+ * Feed history can begin days before kick-off (coverage notes, lineups,
+ * pre-match odds). Start the replay ten minutes before the first kick-off.
+ */
+function trimToMatch(timeline: TimelineItem[]): TimelineItem[] {
+  const kickoff = timeline.find(
+    (i) =>
+      i.kind === "scores" &&
+      ((i.data as TxScores).Action === "kickoff" || (i.data as TxScores).StatusId === 2)
+  );
+  if (!kickoff) return timeline;
+  const from = kickoff.ts - 10 * 60000;
+  return timeline.filter((i) => i.ts >= from);
+}
+
+/** Pre-build the replay file for a finished fixture (idempotent). */
+export async function ensureMaterialized(fixtureId: number, startTime: number): Promise<void> {
+  if (loadMaterialized(fixtureId).length > 20) return;
+  if (loadRecordings(fixtureId).length > 20) return;
+  await backfillTimeline(fixtureId, startTime);
 }
 
 /**
@@ -150,6 +289,7 @@ export function startReplay(
     ? {
         ...source,
         gameState: "Replay",
+        statusId: undefined,
         scoreHome: 0,
         scoreAway: 0,
         minute: 0,
@@ -163,6 +303,7 @@ export function startReplay(
         away: "Away",
         homeId: 0,
         awayId: 0,
+        p1IsHome: true,
         startTime: Date.now(),
         gameState: "Replay",
         scoreHome: 0,
@@ -172,103 +313,14 @@ export function startReplay(
         lastUpdate: Date.now(),
       };
 
-  let timeline = loadTimeline(fixtureId);
-  if (timeline.length < 10 && process.env.TXLINE_SIM === "1") {
-    timeline = synthesizeTimeline(match);
-  }
-
   send({ type: "init", matches: [match] });
 
-  if (timeline.length === 0) {
-    send({ type: "replay_done" });
-    return () => {};
-  }
-
-  const t0 = timeline[0].ts;
-  let idx = 0;
   let cancelled = false;
   let timer: ReturnType<typeof setTimeout> | null = null;
-
-  const step = () => {
-    if (cancelled) return;
-    // Emit every item due at this compressed timestamp
-    const emitted = timeline[idx];
-    apply(emitted);
-    idx += 1;
-    if (idx >= timeline.length) {
-      send({ type: "replay_done" });
-      return;
-    }
-    const gap = (timeline[idx].ts - emitted.ts) / speed;
-    timer = setTimeout(step, Math.max(5, Math.min(gap, 5000)));
-  };
-
-  const apply = (item: TimelineItem) => {
-    if (item.kind === "odds") {
-      const point = oddsToProbPoint(item.data as TxOddsPayload, match.home, match.away);
-      if (!point) return;
-      const prev = match.probs[match.probs.length - 1];
-      if (prev && prev.ts >= point.ts) return;
-      match.probs.push(point);
-      send({ type: "prob", fixtureId, point });
-      detectReplayShift();
-    } else {
-      const s = item.data as TxScores;
-      const info = extractScoreInfo(s);
-      const prevHome = match.scoreHome;
-      const prevAway = match.scoreAway;
-      const prevState = match.gameState;
-      if (info.gameState) match.gameState = info.gameState;
-      if (info.minute !== undefined) match.minute = info.minute;
-      if (info.home !== undefined) match.scoreHome = info.home;
-      if (info.away !== undefined) match.scoreAway = info.away;
-
-      if (match.scoreHome !== prevHome || match.scoreAway !== prevAway) {
-        const side = match.scoreHome !== prevHome ? "home" : "away";
-        const team = side === "home" ? match.home : match.away;
-        const event = makeEvent({
-          fixtureId,
-          ts: s.ts || Date.now(),
-          kind: "goal",
-          side,
-          minute: match.minute,
-          label: `GOAL! ${team} score, ${match.scoreHome}–${match.scoreAway}`,
-        });
-        match.events.push(event);
-        send({ type: "event", event });
-      }
-      if (info.gameState && info.gameState !== prevState) {
-        const g = info.gameState.toLowerCase();
-        let mapped: { kind: "kickoff" | "halftime" | "fulltime"; label: string } | null = null;
-        if (/(ht|half.?time|interval)/.test(g)) mapped = { kind: "halftime", label: "Half-time" };
-        else if (/(ft|full|final|ended|finish)/.test(g)) mapped = { kind: "fulltime", label: "Full-time" };
-        else if (/(1st|first|kick)/.test(g) && /replay/.test(prevState.toLowerCase()))
-          mapped = { kind: "kickoff", label: "Kick-off" };
-        if (mapped) {
-          const event = makeEvent({
-            fixtureId,
-            ts: s.ts || Date.now(),
-            kind: mapped.kind,
-            minute: match.minute,
-            label: mapped.label,
-          });
-          match.events.push(event);
-          send({ type: "event", event });
-        }
-      }
-      send({
-        type: "score",
-        fixtureId,
-        scoreHome: match.scoreHome,
-        scoreAway: match.scoreAway,
-        gameState: match.gameState,
-        minute: match.minute,
-      });
-    }
-  };
-
   let lastShiftTs = 0;
+
   const detectReplayShift = () => {
+    if (!isInPlay(match.statusId)) return;
     const points = match.probs;
     const now = points[points.length - 1];
     if (!now) return;
@@ -294,9 +346,54 @@ export function startReplay(
     send({ type: "event", event });
   };
 
-  // small delay so the client processes init first
-  timer = setTimeout(step, 150);
-  void t0;
+  const apply = (item: TimelineItem) => {
+    if (item.kind === "odds") {
+      const point = oddsToProbPoint(item.data as TxOddsPayload, match.p1IsHome);
+      if (!point) return;
+      const prev = match.probs[match.probs.length - 1];
+      if (prev && prev.ts >= point.ts) return;
+      match.probs.push(point);
+      send({ type: "prob", fixtureId, point });
+      detectReplayShift();
+    } else {
+      const events = applyScores(match, item.data as TxScores);
+      for (const event of events) send({ type: "event", event });
+      send({
+        type: "score",
+        fixtureId,
+        scoreHome: match.scoreHome,
+        scoreAway: match.scoreAway,
+        gameState: match.gameState,
+        minute: match.minute,
+      });
+    }
+  };
+
+  (async () => {
+    const timeline = await loadTimeline(fixtureId, match.startTime);
+    if (cancelled) return;
+    if (timeline.length === 0) {
+      send({ type: "replay_done" });
+      return;
+    }
+    let idx = 0;
+    const step = () => {
+      if (cancelled) return;
+      const emitted = timeline[idx];
+      apply(emitted);
+      idx += 1;
+      if (idx >= timeline.length) {
+        send({ type: "replay_done" });
+        return;
+      }
+      const gap = (timeline[idx].ts - emitted.ts) / speed;
+      timer = setTimeout(step, Math.max(2, Math.min(gap, 5000)));
+    };
+    step();
+  })().catch((e) => {
+    console.error("[replay] session failed:", e);
+    send({ type: "replay_done" });
+  });
 
   return () => {
     cancelled = true;

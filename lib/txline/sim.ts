@@ -43,6 +43,7 @@ export function startSimulation(hub: SimHubLike) {
       away: cfg.away,
       homeId: cfg.fixtureId * 10 + 1,
       awayId: cfg.fixtureId * 10 + 2,
+      p1IsHome: true,
       startTime: now - cfg.minutesIn * 60000 - (cfg.finished ? 3 * 3600000 : 0),
       gameState: cfg.finished ? "Full Time" : live ? "1st Half" : "scheduled",
       scoreHome: cfg.finished ? 2 : 0,

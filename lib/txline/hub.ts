@@ -4,14 +4,10 @@ import { EventSource } from "eventsource";
 import { API_BASE, NETWORK, RECORDINGS_DIR, WORLD_CUP_COMPETITION_ID } from "./config";
 import { getAuth, renewJwt } from "./auth";
 import { txGet } from "./api";
-import {
-  extractScoreInfo,
-  fixtureToMatch,
-  makeEvent,
-  oddsToProbPoint,
-} from "./normalize";
+import { applyScores, fixtureToMatch, isEndedStatus, isInPlay, makeEvent, oddsToProbPoint } from "./normalize";
 import type {
   MatchState,
+  ProbPoint,
   StreamMessage,
   TxFixture,
   TxOddsPayload,
@@ -46,7 +42,9 @@ class MatchHub {
       await this.openStream("odds");
       await this.openStream("scores");
       setInterval(() => this.broadcast({ type: "heartbeat", ts: Date.now() }), 25000);
+      setInterval(() => this.loadFixtures().catch(() => {}), 10 * 60 * 1000);
       console.log(`[hub] started on ${NETWORK}: ${this.matches.size} fixtures`);
+      void this.warmReplays();
     } catch (e) {
       this.started = false;
       this.lastError = String(e);
@@ -56,7 +54,7 @@ class MatchHub {
   }
 
   /** Simulator entry points (dev only) — reuse the exact live paths. */
-  onSimProb(fixtureId: number, point: import("./types").ProbPoint) {
+  onSimProb(fixtureId: number, point: ProbPoint) {
     const match = this.matches.get(fixtureId);
     if (!match) return;
     match.probs.push(point);
@@ -98,10 +96,25 @@ class MatchHub {
     this.broadcast({ type: "event", event });
   }
 
+  /** Pre-build replay files for finished fixtures so replays start instantly. */
+  private async warmReplays() {
+    const { ensureMaterialized } = await import("./replay");
+    for (const m of this.snapshot()) {
+      const finished = isEndedStatus(m.statusId) || m.startTime < Date.now() - 3 * 3600000;
+      if (!finished) continue;
+      try {
+        await ensureMaterialized(m.fixtureId, m.startTime);
+      } catch (e) {
+        console.error(`[hub] warm replay ${m.fixtureId} failed:`, String(e).slice(0, 120));
+      }
+    }
+    console.log("[hub] replay warm-up complete");
+  }
+
   private async loadFixtures() {
     const today = Math.floor(Date.now() / 86400000);
-    // Pull a window starting two weeks back so recently finished matches
-    // (usable in replay) are present alongside upcoming ones.
+    // Window starts two weeks back so recently finished matches (replayable)
+    // are present alongside upcoming ones.
     const fixtures = await txGet<TxFixture[]>(
       `/fixtures/snapshot?competitionId=${WORLD_CUP_COMPETITION_ID}&startEpochDay=${today - 14}`
     );
@@ -159,13 +172,13 @@ class MatchHub {
     const match = this.matches.get(odds.FixtureId);
     if (!match) return;
 
-    const marketKey = `${odds.Bookmaker}|${odds.SuperOddsType}|${odds.MarketPeriod}|${(odds.PriceNames || []).join(",")}`;
+    const marketKey = `${odds.SuperOddsType}|${odds.MarketParameters ?? ""}`;
     if (!this.seenMarkets.has(marketKey)) {
       this.seenMarkets.add(marketKey);
       console.log(`[hub] market seen: ${marketKey}`);
     }
 
-    const point = oddsToProbPoint(odds, match.home, match.away);
+    const point = oddsToProbPoint(odds, match.p1IsHome);
     if (!point) return;
 
     const prev = match.probs[match.probs.length - 1];
@@ -178,12 +191,11 @@ class MatchHub {
   }
 
   private detectShift(match: MatchState) {
+    if (!isInPlay(match.statusId) && process.env.TXLINE_SIM !== "1") return;
     const points = match.probs;
     const now = points[points.length - 1];
     if (!now) return;
-    const base = [...points]
-      .reverse()
-      .find((p) => now.ts - p.ts >= SHIFT_LOOKBACK_MS);
+    const base = [...points].reverse().find((p) => now.ts - p.ts >= SHIFT_LOOKBACK_MS);
     if (!base) return;
     const last = this.lastShiftAt.get(match.fixtureId) || 0;
     if (now.ts - last < SHIFT_DEBOUNCE_MS) return;
@@ -211,60 +223,10 @@ class MatchHub {
   }
 
   onScores(s: TxScores) {
-    const match = this.matches.get(s.fixtureId);
+    const match = this.matches.get(s.FixtureId);
     if (!match) return;
-    const info = extractScoreInfo(s);
-    const prevState = match.gameState;
-    const prevHome = match.scoreHome;
-    const prevAway = match.scoreAway;
-
-    if (info.gameState) match.gameState = info.gameState;
-    if (info.minute !== undefined) match.minute = info.minute;
-    if (info.home !== undefined) match.scoreHome = info.home;
-    if (info.away !== undefined) match.scoreAway = info.away;
-    match.lastUpdate = Date.now();
-
-    if (match.scoreHome !== prevHome || match.scoreAway !== prevAway) {
-      const side = match.scoreHome !== prevHome ? "home" : "away";
-      const team = side === "home" ? match.home : match.away;
-      const event = makeEvent({
-        fixtureId: match.fixtureId,
-        ts: s.ts || Date.now(),
-        kind: "goal",
-        side,
-        minute: match.minute,
-        label: `GOAL! ${team} score, ${match.scoreHome}–${match.scoreAway}`,
-      });
-      match.events.push(event);
-      this.broadcast({ type: "event", event });
-    }
-
-    if (info.gameState && info.gameState !== prevState) {
-      const kindMap: Record<string, { kind: "kickoff" | "halftime" | "fulltime"; label: string } | undefined> = {};
-      const g = info.gameState.toLowerCase();
-      let mapped: { kind: "kickoff" | "halftime" | "fulltime"; label: string } | undefined =
-        kindMap[g];
-      if (!mapped) {
-        if (/(1st|first|p1|inplay|live|kick)/.test(g) && /(sched|not|pre)/.test(prevState.toLowerCase()))
-          mapped = { kind: "kickoff", label: "Kick-off" };
-        else if (/(ht|half.?time|interval)/.test(g))
-          mapped = { kind: "halftime", label: "Half-time" };
-        else if (/(ft|full|final|ended|finished)/.test(g))
-          mapped = { kind: "fulltime", label: "Full-time" };
-      }
-      if (mapped) {
-        const event = makeEvent({
-          fixtureId: match.fixtureId,
-          ts: s.ts || Date.now(),
-          kind: mapped.kind,
-          minute: match.minute,
-          label: mapped.label,
-        });
-        match.events.push(event);
-        this.broadcast({ type: "event", event });
-      }
-    }
-
+    const events = applyScores(match, s);
+    for (const event of events) this.broadcast({ type: "event", event });
     this.broadcast({
       type: "score",
       fixtureId: match.fixtureId,
