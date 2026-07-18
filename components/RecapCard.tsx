@@ -2,11 +2,13 @@
 
 import { Button, Card, CardBody, Chip } from "@heroui/react";
 import { Icon } from "@iconify/react";
+import { useState } from "react";
 import type { MatchState } from "@/lib/txline/types";
 import { biggestSwing, dramaPeak } from "@/lib/drama";
+import { shareWatch, watchUrl, embedPath } from "@/lib/share";
 import { loadStats } from "@/lib/stats";
 import { useWallet } from "@/lib/useWallet";
-import { COLORS } from "./PulseChart";
+import { COLORS } from "./WaveChart";
 
 export default function RecapCard({ match }: { match: MatchState }) {
   const swing = biggestSwing(match.probs);
@@ -14,17 +16,24 @@ export default function RecapCard({ match }: { match: MatchState }) {
   const { address } = useWallet();
   const stats = loadStats(address);
   const goals = match.events.filter((e) => e.kind === "goal").length;
+  const [shareState, setShareState] = useState<"idle" | "copied">("idle");
 
   const share = async () => {
-    const swingText = swing
-      ? `Biggest market swing: ${swing.side === "home" ? match.home : match.away} ${swing.delta > 0 ? "+" : ""}${swing.delta}pp in 5 min.`
-      : "";
-    const text = `${match.home} ${match.scoreHome}–${match.scoreAway} ${match.away}. Drama peak ${peak}/100. ${swingText} Felt on Fervor ⚽📈`;
+    const result = await shareWatch(match, { teams: [match.home, match.away], replay: true });
+    if (result === "copied") {
+      setShareState("copied");
+      setTimeout(() => setShareState("idle"), 2000);
+    }
+  };
+
+  const copyEmbed = async () => {
+    const snippet = `<iframe src="${location.origin}${embedPath(match.fixtureId)}" width="420" height="280" frameborder="0" allow="autoplay" style="border-radius:12px;border:0"></iframe>`;
     try {
-      if (navigator.share) await navigator.share({ text, url: location.origin });
-      else await navigator.clipboard.writeText(`${text} ${location.origin}`);
+      await navigator.clipboard.writeText(snippet);
+      setShareState("copied");
+      setTimeout(() => setShareState("idle"), 2000);
     } catch {
-      // user dismissed share sheet
+      // ignore
     }
   };
 
@@ -77,13 +86,47 @@ export default function RecapCard({ match }: { match: MatchState }) {
           </div>
         )}
 
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Button
+            color="primary"
+            radius="full"
+            className="flex-1"
+            startContent={<Icon icon="solar:share-bold" width={17} />}
+            onPress={share}
+          >
+            {shareState === "copied" ? "Link copied" : "Share full-time card"}
+          </Button>
+          <Button
+            radius="full"
+            variant="bordered"
+            className="flex-1 border-default-300"
+            startContent={<Icon icon="solar:users-group-rounded-bold-duotone" width={17} />}
+            onPress={async () => {
+              const url = watchUrl(location.origin, match.fixtureId, {
+                teams: [match.home, match.away],
+                replay: true,
+              });
+              try {
+                await navigator.clipboard.writeText(url);
+                setShareState("copied");
+                setTimeout(() => setShareState("idle"), 2000);
+              } catch {
+                // ignore
+              }
+            }}
+          >
+            Watch with me
+          </Button>
+        </div>
         <Button
-          color="primary"
+          size="sm"
           radius="full"
-          startContent={<Icon icon="solar:share-bold" width={17} />}
-          onPress={share}
+          variant="light"
+          className="self-center text-default-400"
+          startContent={<Icon icon="solar:code-bold" width={14} />}
+          onPress={copyEmbed}
         >
-          Share this match
+          Copy streamer embed
         </Button>
       </CardBody>
     </Card>

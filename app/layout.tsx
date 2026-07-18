@@ -22,37 +22,43 @@ const pixel = Silkscreen({
 });
 
 export const metadata: Metadata = {
-  title: "Fervor — the heartbeat of the World Cup",
+  title: "Torq — the heartbeat of the World Cup",
   description:
     "Live win chances, momentum swings and match moments for every World Cup game. Watch the market move, call the swings, relive the drama.",
   openGraph: {
-    title: "Fervor",
+    title: "Torq",
     description:
       "Every match has a heartbeat. Live win chances that move with every goal.",
     type: "website",
   },
   manifest: "/manifest.webmanifest",
-  appleWebApp: { capable: true, title: "Fervor", statusBarStyle: "default" },
+  appleWebApp: { capable: true, title: "Torq", statusBarStyle: "default" },
   icons: { apple: "/apple-touch-icon.png" },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#F4F4F5",
+  themeColor: "#FFFFFF",
   width: "device-width",
   initialScale: 1,
+  colorScheme: "light",
 };
 
-const themeInit = `(function(){try{var t=localStorage.getItem("mp-theme");var d=t==="dark";var c=document.documentElement.classList;c.toggle("dark",d);c.toggle("light",!d);}catch(e){}})();`;
+/** White/light by default. Dark only if user explicitly chose dark. */
+const themeInit = `(function(){try{var t=localStorage.getItem("torq-theme");var c=document.documentElement.classList;if(t==="dark"){c.add("dark");c.remove("light");}else{c.add("light");c.remove("dark");if(t!=="light")localStorage.setItem("torq-theme","light");}}catch(e){document.documentElement.classList.add("light");document.documentElement.classList.remove("dark");}})();`;
 
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`light ${plexSans.variable} ${plexMono.variable} ${pixel.variable}`}>
+    <html
+      lang="en"
+      className={`light ${plexSans.variable} ${plexMono.variable} ${pixel.variable}`}
+      style={{ colorScheme: "light" }}
+    >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInit }} />
       </head>
-      <body className="antialiased">
+      <body className="bg-white antialiased text-zinc-900">
         <Providers>{children}</Providers>
       </body>
     </html>

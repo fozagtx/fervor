@@ -49,4 +49,9 @@ data/recordings/*/scores-*.jsonl
 *.png
 !public/*.png
 data/recordings/
+data/who-wins.json
+data/follows.json
 !docs/screenshots/*.png
+
+# built macOS island (rebuild with ./macos/build.sh)
+macos/dist/

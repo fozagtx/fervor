@@ -57,7 +57,7 @@ export default function Mascot({
       style={{
         animation: celebrate ? undefined : "mascot-bounce 1.4s ease-in-out infinite",
       }}
-      aria-label="Beat, the Fervor mascot"
+      aria-label="Beat, the Torq mascot"
       role="img"
     >
       <Frame rows={kick ? MASCOT_KICK : MASCOT_IDLE} size={size} />

@@ -1,5 +1,5 @@
 /**
- * Beat, the Fervor mascot: a 16x16 pixel football with eyes and legs.
+ * Beat, the Torq mascot: a 16x16 pixel football with eyes and legs.
  * '.' transparent · K black · W white · G green · Y warning
  * Shared by the web component and the icon generator.
  */

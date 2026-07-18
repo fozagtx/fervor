@@ -11,7 +11,7 @@ export interface CallStats {
 export const EMPTY_STATS: CallStats = { streak: 0, best: 0, wins: 0, plays: 0, points: 0 };
 
 const keyFor = (address: string | null) =>
-  address ? `matchpulse-market-stats:${address}` : "matchpulse-market-stats";
+  address ? `torq-market-stats:${address}` : "torq-market-stats";
 
 export function loadStats(address: string | null): CallStats {
   if (typeof window === "undefined") return EMPTY_STATS;

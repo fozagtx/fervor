@@ -16,7 +16,7 @@ function getProvider(): SolanaProvider | null {
   return w.phantom?.solana ?? w.solana ?? null;
 }
 
-const TRUSTED_KEY = "matchpulse-wallet-trusted";
+const TRUSTED_KEY = "torq-wallet-trusted";
 
 /**
  * Minimal optional wallet connection (Phantom or any injected Solana

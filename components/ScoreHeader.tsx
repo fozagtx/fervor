@@ -5,7 +5,7 @@ import type { MatchState } from "@/lib/txline/types";
 import { dramaScore } from "@/lib/drama";
 import { flagOf } from "@/lib/flags";
 import DramaMeter from "./DramaMeter";
-import { COLORS } from "./PulseChart";
+import { COLORS } from "./WaveChart";
 
 export default function ScoreHeader({ match, replay }: { match: MatchState; replay?: boolean }) {
   const g = match.gameState.toLowerCase();

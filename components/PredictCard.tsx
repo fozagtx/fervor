@@ -9,7 +9,7 @@ import { playerId } from "@/lib/player";
 import { shortAddress } from "@/lib/useWallet";
 import { adoptGuestStats, type CallStats, EMPTY_STATS, loadStats, saveStats } from "@/lib/stats";
 import { useWallet } from "@/lib/useWallet";
-import { COLORS } from "./PulseChart";
+import { COLORS } from "./WaveChart";
 
 const WINDOW_MS = 5 * 60 * 1000; // five minutes of match-feed time
 
@@ -85,7 +85,7 @@ export default function PredictCard({ match }: { match: MatchState }) {
   };
 
   const share = async () => {
-    const text = `I'm ${stats.streak > 0 ? `on a ${stats.streak}-call streak` : `${stats.wins}/${stats.plays}`} against the World Cup betting market on Fervor ⚽📈`;
+    const text = `I'm ${stats.streak > 0 ? `on a ${stats.streak}-call streak` : `${stats.wins}/${stats.plays}`} against the World Cup betting market on Torq ⚽📈`;
     try {
       if (navigator.share) await navigator.share({ text, url: location.origin });
       else await navigator.clipboard.writeText(`${text} ${location.origin}`);

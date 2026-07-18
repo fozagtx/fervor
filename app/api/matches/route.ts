@@ -1,18 +1,56 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { dramaScore } from "@/lib/drama";
 import { hub } from "@/lib/txline/hub";
+import { historyFor } from "@/lib/txline/replay";
+import type { MatchState } from "@/lib/txline/types";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+function isFinished(m: MatchState): boolean {
+  return /(ft|full|final|ended|finish)/i.test(m.gameState);
+}
+
+export async function GET(req: NextRequest) {
   await hub.start();
-  const matches = hub.snapshot().map((m) => {
-    const stride = Math.max(1, Math.ceil(m.probs.length / 40));
+  const teamsFilter = (req.nextUrl.searchParams.get("teams") || "")
+    .split(",")
+    .map((t) => t.trim().toLowerCase())
+    .filter(Boolean);
+
+  let matches = hub.snapshot().map((m) => {
+    let probs = m.probs;
+    let events = m.events;
+    let seriesSource = m.probs;
+
+    // Finished fixtures often have an empty live buffer — hydrate from recordings
+    // so the lobby / island can show the wave and "Replay" is obviously available.
+    if (isFinished(m) && m.probs.length < 8) {
+      const history = historyFor(m);
+      if (history && history.probs.length > 0) {
+        seriesSource = history.probs;
+        probs = history.probs.slice(-1);
+        events = history.events;
+      }
+    }
+
+    const stride = Math.max(1, Math.ceil(seriesSource.length / 40));
+    const enriched: MatchState = { ...m, probs: seriesSource, events };
     return {
       ...m,
-      probs: m.probs.slice(-1), // list view only needs the latest point
-      series: m.probs.filter((_, i) => i % stride === 0 || i === m.probs.length - 1),
-      events: m.events.slice(-3),
+      drama: dramaScore(enriched),
+      probs,
+      series: seriesSource.filter((_, i) => i % stride === 0 || i === seriesSource.length - 1),
+      events: events.slice(-5),
+      replayable: isFinished(m) && seriesSource.length > 5,
     };
   });
+
+  if (teamsFilter.length > 0) {
+    matches = matches.filter(
+      (m) =>
+        teamsFilter.includes(m.home.toLowerCase()) || teamsFilter.includes(m.away.toLowerCase())
+    );
+  }
+
   return NextResponse.json({ matches, error: hub.lastError });
 }

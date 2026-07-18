@@ -1,22 +1,22 @@
 #!/bin/bash
-# Builds Fervor.app, an unsigned menu-bar app for macOS.
+# Builds Torq.app, an unsigned menu-bar app for macOS.
 set -euo pipefail
 cd "$(dirname "$0")"
 
-APP=dist/Fervor.app
+APP=dist/Torq.app
 rm -rf dist
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 
-swiftc -O -o "$APP/Contents/MacOS/Fervor" main.swift -framework AppKit -framework WebKit
+swiftc -O -o "$APP/Contents/MacOS/Torq" main.swift -framework AppKit -framework WebKit
 
 cat > "$APP/Contents/Info.plist" <<'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-  <key>CFBundleName</key><string>Fervor</string>
-  <key>CFBundleIdentifier</key><string>app.fervor.menubar</string>
-  <key>CFBundleExecutable</key><string>Fervor</string>
+  <key>CFBundleName</key><string>Torq</string>
+  <key>CFBundleIdentifier</key><string>app.torq.menubar</string>
+  <key>CFBundleExecutable</key><string>Torq</string>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleShortVersionString</key><string>1.0</string>
   <key>LSUIElement</key><true/>

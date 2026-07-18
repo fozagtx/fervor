@@ -46,7 +46,7 @@ function smoothPath(points: Pt[]): string {
   return d;
 }
 
-export default function PulseChart({ probs, events, home, away }: Props) {
+export default function WaveChart({ probs, events, home, away }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [cursor, setCursor] = useState<number | null>(null);
 

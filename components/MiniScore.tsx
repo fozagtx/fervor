@@ -6,7 +6,7 @@ import { dramaScore } from "@/lib/drama";
 import Mascot from "@/components/Mascot";
 import { flagOf } from "@/lib/flags";
 import { useMatchStream } from "@/lib/useMatchStream";
-import { COLORS } from "./PulseChart";
+import { COLORS } from "./WaveChart";
 
 /** Island-style compact scoreboard for a floating mini window. */
 export default function MiniScore({ fixtureId }: { fixtureId: number }) {

@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import Mascot from "@/components/Mascot";
 import { flagOf } from "@/lib/flags";
-import { COLORS } from "@/components/PulseChart";
+import { COLORS } from "@/components/WaveChart";
 import type { ProbPoint } from "@/lib/txline/types";
 
 interface FeedMoment {
@@ -57,7 +57,7 @@ export default function FeedPage() {
       })
       .catch(() => setMoments([]));
     try {
-      setMine(JSON.parse(localStorage.getItem("fervor-reactions") || "{}"));
+      setMine(JSON.parse(localStorage.getItem("torq-reactions") || "{}"));
     } catch {
       // fresh start
     }
@@ -68,7 +68,7 @@ export default function FeedPage() {
     const nextMine = { ...mine, [id]: [...(mine[id] ?? []), kind] };
     setMine(nextMine);
     try {
-      localStorage.setItem("fervor-reactions", JSON.stringify(nextMine));
+      localStorage.setItem("torq-reactions", JSON.stringify(nextMine));
     } catch {
       // private browsing
     }
@@ -84,7 +84,7 @@ export default function FeedPage() {
   };
 
   const share = async (m: FeedMoment) => {
-    const text = `${flagOf(m.home)} ${m.home} ${m.scoreHome}–${m.scoreAway} ${m.away} ${flagOf(m.away)} · ${m.label} (${m.minute ?? "?"}′). Felt on Fervor ⚽📈`;
+    const text = `${flagOf(m.home)} ${m.home} ${m.scoreHome}–${m.scoreAway} ${m.away} ${flagOf(m.away)} · ${m.label} (${m.minute ?? "?"}′). Felt on Torq ⚽📈`;
     try {
       if (navigator.share) await navigator.share({ text, url: `${location.origin}/match/${m.fixtureId}` });
       else await navigator.clipboard.writeText(`${text} ${location.origin}/match/${m.fixtureId}`);

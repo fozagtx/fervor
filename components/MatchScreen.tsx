@@ -6,7 +6,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import TopBar from "@/components/TopBar";
 import ScoreHeader from "@/components/ScoreHeader";
-import PulseChart from "@/components/PulseChart";
+import MarketSlip from "@/components/MarketSlip";
+import WaveChart from "@/components/WaveChart";
 import EventTicker from "@/components/EventTicker";
 import GoalBlast from "@/components/GoalBlast";
 import SoundToggle from "@/components/SoundToggle";
@@ -14,17 +15,28 @@ import PredictCard from "@/components/PredictCard";
 import ProofBadge from "@/components/ProofBadge";
 import RecapCard from "@/components/RecapCard";
 import { PunditCaption, PunditToggle } from "@/components/PunditVoice";
+import { shareWatch, embedPath } from "@/lib/share";
 import { useMatchStream } from "@/lib/useMatchStream";
 import type { MatchState } from "@/lib/txline/types";
 
 const SPEEDS = [10, 30, 60];
 
-export default function MatchScreen({ fixtureId }: { fixtureId: number }) {
-  const [replay, setReplay] = useState(false);
+export default function MatchScreen({
+  fixtureId,
+  autoReplay = false,
+}: {
+  fixtureId: number;
+  autoReplay?: boolean;
+}) {
+  const [replay, setReplay] = useState(autoReplay);
   const [speed, setSpeed] = useState(30);
   const [pundit, setPundit] = useState(false);
   const { matches, connected, replayDone } = useMatchStream({ fixtureId, replay, speed });
   const streamMatch = matches.get(fixtureId);
+
+  useEffect(() => {
+    if (autoReplay) setReplay(true);
+  }, [autoReplay]);
 
   // Finished matches show their full recorded history without needing replay
   const [history, setHistory] = useState<{ probs: MatchState["probs"]; events: MatchState["events"] } | null>(null);
@@ -59,7 +71,7 @@ export default function MatchScreen({ fixtureId }: { fixtureId: number }) {
     const goals = match.events.filter((e) => e.kind === "goal");
     const last = goals[goals.length - 1];
     if (!last) return;
-    const seenKey = `fervor-buzz-${fixtureId}`;
+    const seenKey = `torq-buzz-${fixtureId}`;
     const seen = sessionStorage.getItem(seenKey);
     if (seen === last.id) return;
     sessionStorage.setItem(seenKey, last.id);
@@ -70,10 +82,10 @@ export default function MatchScreen({ fixtureId }: { fixtureId: number }) {
   useEffect(() => {
     if (!match) return;
     document.title = isLive
-      ? `● LIVE ${match.scoreHome}–${match.scoreAway} · ${match.home} vs ${match.away} — Fervor`
-      : `${match.home} vs ${match.away} — Fervor`;
+      ? `● LIVE ${match.scoreHome}–${match.scoreAway} · ${match.home} vs ${match.away} — Torq`
+      : `${match.home} vs ${match.away} — Torq`;
     return () => {
-      document.title = "Fervor — the heartbeat of the World Cup";
+      document.title = "Torq — the heartbeat of the World Cup";
     };
   }, [match, isLive, match?.scoreHome, match?.scoreAway]);
 
@@ -106,23 +118,55 @@ export default function MatchScreen({ fixtureId }: { fixtureId: number }) {
             >
               All matches
             </Button>
-            <Button
-              size="sm"
-              radius="full"
-              variant="bordered"
-              className="hidden border-default-300 text-default-500 sm:flex"
-              startContent={<Icon icon="solar:widget-add-linear" width={14} />}
-              onPress={() =>
-                window.open(`/mini/${fixtureId}`, "fervor-mini", "width=380,height=150,resizable=yes")
-              }
-            >
-              Mini scoreboard
-            </Button>
+            <div className="flex items-center gap-1.5">
+              <Button
+                size="sm"
+                radius="full"
+                variant="flat"
+                color="primary"
+                startContent={<Icon icon="solar:users-group-rounded-bold-duotone" width={15} />}
+                onPress={() => match && shareWatch(match, { teams: [match.home, match.away] })}
+                isDisabled={!match}
+              >
+                Watch with me
+              </Button>
+              <Button
+                size="sm"
+                radius="full"
+                variant="bordered"
+                className="hidden border-default-300 text-default-500 sm:flex"
+                startContent={<Icon icon="solar:widget-add-linear" width={14} />}
+                onPress={() =>
+                  window.open(`/mini/${fixtureId}`, "torq-mini", "width=380,height=150,resizable=yes")
+                }
+              >
+                Mini
+              </Button>
+              <Button
+                size="sm"
+                radius="full"
+                variant="light"
+                className="hidden text-default-400 sm:flex"
+                startContent={<Icon icon="solar:code-bold" width={14} />}
+                onPress={async () => {
+                  const snippet = `<iframe src="${location.origin}${embedPath(fixtureId)}" width="420" height="280" frameborder="0" style="border:0;border-radius:12px"></iframe>`;
+                  try {
+                    await navigator.clipboard.writeText(snippet);
+                  } catch {
+                    // ignore
+                  }
+                }}
+              >
+                Embed
+              </Button>
+            </div>
           </div>
 
           <GoalBlast match={match} active={isLive || replay} />
 
           <ScoreHeader match={match} replay={replay} />
+
+          {!replay && <MarketSlip match={match} />}
 
           {!replay && canReplay && (
             <Card shadow="sm" className="border-small border-default-200">
@@ -204,7 +248,7 @@ export default function MatchScreen({ fixtureId }: { fixtureId: number }) {
           <Card shadow="sm" className="border-small border-default-200">
             <CardHeader className="flex-col items-start gap-1 px-5 pb-0 pt-4">
               <div className="flex items-center gap-2">
-                <Icon icon="solar:heart-pulse-bold-duotone" className="text-primary" width={18} />
+                <Icon icon="solar:heart-bold-duotone" className="text-primary" width={18} />
                 <p className="text-medium font-semibold">Win probability</p>
               </div>
               <p className="text-tiny text-default-400">
@@ -212,7 +256,7 @@ export default function MatchScreen({ fixtureId }: { fixtureId: number }) {
               </p>
             </CardHeader>
             <CardBody className="px-2 pb-3 pt-2 sm:px-4">
-              <PulseChart
+              <WaveChart
                 probs={match.probs}
                 events={match.events}
                 home={match.home}

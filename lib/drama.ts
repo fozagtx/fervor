@@ -3,7 +3,7 @@ import type { MatchEvent, MatchState, ProbPoint } from "@/lib/txline/types";
 /**
  * Drama score, 0–100: how much is happening in this match right now.
  * Blends recent market volatility (how violently win probability is moving)
- * with a decaying pulse from high-impact events.
+ * with a decaying spike from high-impact events.
  */
 export function dramaScore(match: MatchState, nowTs?: number): number {
   const probs = match.probs;
@@ -23,8 +23,8 @@ export function dramaScore(match: MatchState, nowTs?: number): number {
   // ~20pp of cumulative weighted movement in 10 min = wild market
   const volScore = Math.min(60, (volatility / 20) * 60);
 
-  // Event pulses: each big moment adds a spike that decays over 8 minutes.
-  const pulseOf: Partial<Record<MatchEvent["kind"], number>> = {
+  // Event spikes: each big moment adds heat that decays over 8 minutes.
+  const spikeOf: Partial<Record<MatchEvent["kind"], number>> = {
     goal: 40,
     goal_disallowed: 35,
     penalty: 35,
@@ -32,13 +32,13 @@ export function dramaScore(match: MatchState, nowTs?: number): number {
     var: 20,
     shift: 15,
   };
-  let pulse = 0;
+  let spike = 0;
   for (const e of match.events) {
-    const base = pulseOf[e.kind];
+    const base = spikeOf[e.kind];
     if (!base) continue;
     const age = now - e.ts;
     if (age < 0 || age > 8 * 60 * 1000) continue;
-    pulse += base * (1 - age / (8 * 60 * 1000));
+    spike += base * (1 - age / (8 * 60 * 1000));
   }
 
   // Closeness bonus: a tight three-way market is inherently tenser.
@@ -46,7 +46,7 @@ export function dramaScore(match: MatchState, nowTs?: number): number {
   const spread = Math.abs(last.home - last.away);
   const closeness = Math.max(0, 10 - spread / 4);
 
-  return Math.round(Math.min(100, volScore + Math.min(45, pulse) + closeness));
+  return Math.round(Math.min(100, volScore + Math.min(45, spike) + closeness));
 }
 
 /** Biggest swing in any 5-minute window: [delta pp, side, endTs]. */

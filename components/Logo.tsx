@@ -4,16 +4,16 @@ export default function Logo({ size = 38 }: { size?: number }) {
       width={size}
       height={size}
       viewBox="0 0 64 64"
-      aria-label="Fervor"
+      aria-label="Torq"
       className="shrink-0"
     >
       <defs>
-        <linearGradient id="mp-logo-g" x1="0" y1="0" x2="1" y2="1">
+        <linearGradient id="torq-logo-g" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor="#0F8A52" />
           <stop offset="100%" stopColor="#052E1C" />
         </linearGradient>
       </defs>
-      <rect width="64" height="64" rx="15" fill="url(#mp-logo-g)" />
+      <rect width="64" height="64" rx="15" fill="url(#torq-logo-g)" />
       <path
         d="M7 36h11l4-9 7 16 6-22 4 15h18"
         fill="none"

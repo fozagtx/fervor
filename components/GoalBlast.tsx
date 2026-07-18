@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import Mascot from "@/components/Mascot";
 import { flagOf } from "@/lib/flags";
 import type { MatchState } from "@/lib/txline/types";
-import { COLORS } from "./PulseChart";
+import { COLORS } from "./WaveChart";
 
 import { playSound as play } from "@/lib/sound";
 
@@ -95,7 +95,7 @@ export default function GoalBlast({
                   width: size,
                   height: size * 1.6,
                   background: c,
-                  animation: `fervor-confetti 1.9s ${delay}s cubic-bezier(0.3,0.6,0.6,1) forwards`,
+                  animation: `torq-confetti 1.9s ${delay}s cubic-bezier(0.3,0.6,0.6,1) forwards`,
                   transform: `rotate(${(i * 47) % 360}deg)`,
                 }}
               />
@@ -119,7 +119,7 @@ export default function GoalBlast({
           </motion.div>
 
           <style>{`
-            @keyframes fervor-confetti {
+            @keyframes torq-confetti {
               0% { transform: translateY(0) rotate(0deg); opacity: 1; }
               100% { transform: translateY(110vh) rotate(560deg); opacity: 0.6; }
             }

@@ -19,19 +19,18 @@
 
 html {
   font-family: var(--font-sans);
-  background: #f4f4f5;
+  background: #ffffff;
+  color-scheme: light;
 }
 
 html.dark {
   background: #09090b;
+  color-scheme: dark;
 }
 
 body {
   min-height: 100dvh;
-  background:
-    radial-gradient(60rem 40rem at 85% -10%, rgba(15, 138, 82, 0.06), transparent 60%),
-    radial-gradient(50rem 35rem at -10% 110%, rgba(85, 102, 241, 0.05), transparent 60%),
-    #f4f4f5;
+  background: #ffffff;
   color: #18181b;
 }
 
@@ -52,7 +51,7 @@ body {
   letter-spacing: 0.02em;
 }
 
-@keyframes pulse-dot {
+@keyframes live-beat {
   0%,
   100% {
     opacity: 1;
@@ -64,5 +63,5 @@ body {
   }
 }
 .live-dot {
-  animation: pulse-dot 1.6s ease-in-out infinite;
+  animation: live-beat 1.6s ease-in-out infinite;
 }

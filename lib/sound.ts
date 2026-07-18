@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-const KEY = "fervor-sound";
+const KEY = "torq-sound";
 
 export function soundEnabled(): boolean {
   try {
@@ -15,7 +15,7 @@ export function soundEnabled(): boolean {
 export function setSoundEnabled(on: boolean) {
   try {
     localStorage.setItem(KEY, on ? "on" : "off");
-    window.dispatchEvent(new Event("fervor-sound-change"));
+    window.dispatchEvent(new Event("torq-sound-change"));
   } catch {
     // private browsing
   }
@@ -27,8 +27,8 @@ export function useSound() {
   useEffect(() => {
     setOn(soundEnabled());
     const sync = () => setOn(soundEnabled());
-    window.addEventListener("fervor-sound-change", sync);
-    return () => window.removeEventListener("fervor-sound-change", sync);
+    window.addEventListener("torq-sound-change", sync);
+    return () => window.removeEventListener("torq-sound-change", sync);
   }, []);
   return { on, toggle: () => setSoundEnabled(!soundEnabled()) };
 }

@@ -1,10 +1,31 @@
-# Fervor — Submission Notes
+# Torq — Submission Notes
 
 **Track:** TxODDS Consumer and Fan Experiences (World Cup Track)
 
+## Earn form — ready to paste
+
+X / Tweet fields omitted (none). Demo video URL still TBD.
+
+| Field | Value |
+|---|---|
+| Link to Your Submission | https://fervor.up.railway.app |
+| Project Title | Torq |
+| Live MVP | https://fervor.up.railway.app |
+| Demo Video | _TBD_ |
+| Repository | https://github.com/fozagtx/fervor |
+| Technical Documentation | https://github.com/fozagtx/fervor/blob/main/README.md |
+
+**Briefly explain your Project**
+
+Torq is a World Cup second-screen app for fans with a phone in hand. It turns TxLINE consensus odds into a live win-probability “wave,” drama ranking, Beat-the-market skill calls (no wagering), GoalBlast moments, full match replay, a macOS Dynamic Island companion, and one-tap on-chain scoreline proof via TxOracle — so the market’s heartbeat is something you can feel, not a sportsbook.
+
+**Anything Else?** macOS island (`macos/`), embed `/embed/[id]`, watch links `/watch/[id]`, demo script `claudedocs/demo-script.md`.
+
+Same block lives in the root [README](../README.md#world-cup-track-submission).
+
 ## Core idea
 
-Most fans watch with a phone in their hand. The one thing the big operators always had that fans never did is the live market — the single most information-dense signal about a match. Fervor turns TxLINE's consensus odds into a fan product: a live win-probability river you can feel the game through, moments generated from market movement, a prediction streak game scored against the real feed, and full match replays after the whistle.
+Most fans watch with a phone in their hand. The one thing the big operators always had that fans never did is the live market — the single most information-dense signal about a match. Torq turns TxLINE's consensus odds into a fan product: a live win-probability river you can feel the game through, moments generated from market movement, a prediction streak game scored against the real feed, and full match replays after the whistle.
 
 ## Product highlights
 
@@ -26,7 +47,7 @@ Most fans watch with a phone in their hand. The one thing the big operators alwa
 ## Monetization path
 
 1. **Freemium fan app** — free live scores and river; premium tier for personalized push alerts (your team's market swings), extra pundit voices, and ad-free.
-2. **B2B embeddable widget** — the Pulse river as an embed for publishers and streamers, licensed per-seat; a natural downstream distribution channel for TxLINE data.
+2. **B2B embeddable widget** — the win-probability river as an embed for publishers and streamers (`/embed/[fixture]`), licensed per-seat; a natural downstream distribution channel for TxLINE data.
 3. **Sponsorships** — moment cards ("Goal alert presented by …") in high-attention contexts.
 
 ## TxLINE endpoints used

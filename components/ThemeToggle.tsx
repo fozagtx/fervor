@@ -18,7 +18,7 @@ export default function ThemeToggle() {
     c.toggle("dark", next);
     c.toggle("light", !next);
     try {
-      localStorage.setItem("mp-theme", next ? "dark" : "light");
+      localStorage.setItem("torq-theme", next ? "dark" : "light");
     } catch {
       // private browsing
     }
