@@ -59,7 +59,8 @@ struct Notch {
 }
 
 let NOTCH = Notch.read()
-let COLLAPSED = NSSize(width: NOTCH.width + 156, height: NOTCH.height)
+let FILLET: CGFloat = 9
+let COLLAPSED = NSSize(width: NOTCH.width + 156 + FILLET * 2, height: NOTCH.height)
 let HOVERED = NSSize(width: COLLAPSED.width + 6, height: COLLAPSED.height + 6)
 let EXPANDED_WIDTH: CGFloat = max(COLLAPSED.width + 180, 560)
 let ROW_H: CGFloat = 42
@@ -70,6 +71,37 @@ let RADIUS_EXPANDED: CGFloat = 26
 func islandRect(_ size: NSSize) -> NSRect {
     NSRect(x: (STAGE.width - size.width) / 2, y: STAGE.height - size.height,
            width: size.width, height: size.height)
+}
+
+/// Continuous notch curve: concave flares at the top, straight walls,
+/// convex rounded corners at the bottom. Drawn in y-up view coordinates.
+func notchPath(size: NSSize, bottomRadius: CGFloat) -> CGPath {
+    let w = size.width
+    let h = size.height
+    let f = FILLET
+    let b = min(bottomRadius, (h - f) > 0 ? bottomRadius : 4)
+    let p = CGMutablePath()
+    p.move(to: CGPoint(x: 0, y: h))
+    // top-left concave flare: screen edge into the wall
+    p.addArc(center: CGPoint(x: 0, y: h - f), radius: f,
+             startAngle: .pi / 2, endAngle: 0, clockwise: true)
+    // left wall down
+    p.addLine(to: CGPoint(x: f, y: b))
+    // bottom-left convex corner
+    p.addArc(center: CGPoint(x: f + b, y: b), radius: b,
+             startAngle: .pi, endAngle: .pi * 1.5, clockwise: false)
+    // bottom edge
+    p.addLine(to: CGPoint(x: w - f - b, y: 0))
+    // bottom-right convex corner
+    p.addArc(center: CGPoint(x: w - f - b, y: b), radius: b,
+             startAngle: .pi * 1.5, endAngle: 0, clockwise: false)
+    // right wall up
+    p.addLine(to: CGPoint(x: w - f, y: h - f))
+    // top-right concave flare
+    p.addArc(center: CGPoint(x: w, y: h - f), radius: f,
+             startAngle: .pi, endAngle: .pi / 2, clockwise: true)
+    p.closeSubpath()
+    return p
 }
 
 // MARK: - small native atoms
@@ -120,6 +152,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     var barDraw = NSView()
     var barAway = NSView()
     var statusItem: NSStatusItem!
+    var maskLayer: CAShapeLayer!
+    var strokeLayer: CAShapeLayer!
 
     var mascotIdle: NSImage?
     var mascotKick: NSImage?
@@ -199,14 +233,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         island = NSView(frame: islandRect(COLLAPSED))
         island.wantsLayer = true
         island.layer?.backgroundColor = NSColor.black.cgColor
-        island.layer?.cornerRadius = RADIUS_COLLAPSED
-        island.layer?.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
-        island.layer?.borderWidth = 0.5
-        island.layer?.borderColor = NSColor(white: 1, alpha: 0.14).cgColor
+        let mask = CAShapeLayer()
+        mask.path = notchPath(size: COLLAPSED, bottomRadius: RADIUS_COLLAPSED)
+        island.layer?.mask = mask
+        maskLayer = mask
+        let stroke = CAShapeLayer()
+        stroke.path = mask.path
+        stroke.strokeColor = NSColor(white: 1, alpha: 0.14).cgColor
+        stroke.fillColor = nil
+        stroke.lineWidth = 1
+        island.layer?.addSublayer(stroke)
+        strokeLayer = stroke
         island.layer?.shadowColor = NSColor.black.cgColor
         island.layer?.shadowOpacity = 0.5
         island.layer?.shadowRadius = 14
         island.layer?.shadowOffset = CGSize(width: 0, height: -4)
+        island.layer?.shadowPath = mask.path
         island.autoresizesSubviews = false
         stage.addSubview(island)
 
@@ -262,12 +304,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: fluid transitions
 
     func morph(to size: NSSize, radius: CGFloat, duration: TimeInterval, then: (() -> Void)? = nil) {
+        let newPath = notchPath(size: size, bottomRadius: radius)
+        let timing = CAMediaTimingFunction(controlPoints: 0.32, 1.22, 0.5, 1)
+        for layer in [maskLayer, strokeLayer] as [CAShapeLayer] {
+            let anim = CABasicAnimation(keyPath: "path")
+            anim.fromValue = layer.path
+            anim.toValue = newPath
+            anim.duration = duration
+            anim.timingFunction = timing
+            layer.add(anim, forKey: "shape")
+            layer.path = newPath
+        }
+        island.layer?.shadowPath = newPath
         NSAnimationContext.runAnimationGroup({ ctx in
             ctx.duration = duration
             ctx.allowsImplicitAnimation = true
-            ctx.timingFunction = CAMediaTimingFunction(controlPoints: 0.32, 1.22, 0.5, 1)
+            ctx.timingFunction = timing
             island.animator().frame = islandRect(size)
-            island.layer?.cornerRadius = radius
         }, completionHandler: then)
     }
 
@@ -285,7 +338,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard !isExpanded else { return }
         morph(to: HOVERED, radius: RADIUS_COLLAPSED + 2, duration: 0.25)
         expandTimer?.invalidate()
-        expandTimer = Timer.scheduledTimer(withTimeInterval: 0.18, repeats: false) { [weak self] _ in
+        expandTimer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: false) { [weak self] _ in
             self?.expand()
         }
     }
@@ -295,7 +348,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         expandTimer?.invalidate()
         if isExpanded {
             collapseTimer?.invalidate()
-            collapseTimer = Timer.scheduledTimer(withTimeInterval: 0.4, repeats: false) { [weak self] _ in
+            collapseTimer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: false) { [weak self] _ in
                 self?.collapse()
             }
         } else {
@@ -478,16 +531,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let size = rebuildDashboard()
         // Phase 1: pour downward from the notch, barely wider
         let mid = NSSize(width: COLLAPSED.width + 36, height: size.height * 0.6)
-        NSAnimationContext.runAnimationGroup({ ctx in
-            ctx.duration = 0.14
-            ctx.allowsImplicitAnimation = true
-            ctx.timingFunction = CAMediaTimingFunction(name: .easeIn)
-            self.island.animator().frame = islandRect(mid)
-            self.island.layer?.cornerRadius = 18
-        }, completionHandler: {
+        morph(to: mid, radius: 18, duration: 0.14) {
             // Phase 2: spring open to full width
             self.morph(to: size, radius: RADIUS_EXPANDED, duration: 0.34)
-        })
+        }
         NSAnimationContext.runAnimationGroup { ctx in
             ctx.duration = 0.22
             ctx.allowsImplicitAnimation = true
