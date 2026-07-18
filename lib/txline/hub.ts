@@ -40,6 +40,7 @@ class MatchHub {
     }
     try {
       await this.loadFixtures();
+      this.rehydrate();
       await this.openStream("odds");
       await this.openStream("scores");
       setInterval(() => this.broadcast({ type: "heartbeat", ts: Date.now() }), 25000);
@@ -304,7 +305,62 @@ class MatchHub {
     });
   }
 
+  private rehydrating = false;
+
+  /**
+   * Replay today's and yesterday's recorded feed from disk through the normal
+   * pipeline so a restart does not lose the probability rivers and events.
+   */
+  private rehydrate() {
+    this.rehydrating = true;
+    try {
+      let count = 0;
+      const replayFile = (file: string) => {
+        let text = "";
+        try {
+          text = fs.readFileSync(file, "utf8");
+        } catch {
+          return;
+        }
+        const kind = path.basename(file).startsWith("odds") ? "odds" : "scores";
+        for (const line of text.split("\n")) {
+          if (!line.trim()) continue;
+          try {
+            const rec = JSON.parse(line) as { data: TxOddsPayload & TxScores };
+            if (kind === "odds") this.onOdds(rec.data);
+            else this.onScores(rec.data);
+            count++;
+          } catch {
+            // skip malformed line
+          }
+        }
+      };
+
+      // Bundled seed history first (survives fresh disks), then the volume
+      try {
+        for (const f of fs.readdirSync("seed-recordings")) {
+          if (f.endsWith(".jsonl")) replayFile(path.join("seed-recordings", f));
+        }
+      } catch {
+        // no seed dir
+      }
+      const dir = path.join(RECORDINGS_DIR, NETWORK);
+      const days = [Date.now() - 86400000, Date.now()].map((t) =>
+        new Date(t).toISOString().slice(0, 10).replace(/-/g, "")
+      );
+      for (const day of days) {
+        for (const kind of ["odds", "scores"] as const) {
+          replayFile(path.join(dir, `${kind}-${day}.jsonl`));
+        }
+      }
+      if (count) console.log(`[hub] rehydrated ${count} recorded messages`);
+    } finally {
+      this.rehydrating = false;
+    }
+  }
+
   private record(kind: string, data: unknown) {
+    if (this.rehydrating) return;
     try {
       const day = new Date().toISOString().slice(0, 10).replace(/-/g, "");
       const dir = path.join(RECORDINGS_DIR, NETWORK);
