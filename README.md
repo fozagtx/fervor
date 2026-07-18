@@ -52,7 +52,8 @@ export TXLINE_API_TOKEN=...
 pnpm dev                       # http://localhost:3000
 ```
 
-Live smoke: `pnpm smoke` · Island: `./macos/build.sh && open macos/dist/Torq.app`
+Live smoke: `pnpm smoke`  
+**Mac notch DMG:** [Download Torq.dmg](https://github.com/fozagtx/fervor/releases/download/torq-mac/Torq.dmg) · build: `./macos/build.sh`
 
 ## Key Features
 
