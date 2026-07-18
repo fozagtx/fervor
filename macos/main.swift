@@ -2,9 +2,9 @@ import AppKit
 import WebKit
 
 // Fervor island: the World Cup living in your notch.
-// One panel that morphs, Dynamic Island style: springs open on hover into
-// the streaming scoreboard, pulses when anyone scores, with Beat the
-// mascot kicking along to an 8-bit chime.
+// The window never moves; the island is a view animated by Core Animation,
+// so every transition is fluid: a hover swell, a springy morph into the
+// streaming scoreboard, and a goal pulse with Beat kicking to an 8-bit chime.
 
 let BASE = ProcessInfo.processInfo.environment["FERVOR_URL"] ?? "https://fervor.up.railway.app"
 
@@ -38,12 +38,46 @@ struct MatchInfo {
     }
 }
 
-let COLLAPSED = NSSize(width: 320, height: 38)
-let EXPANDED = NSSize(width: 420, height: 184)
+// The stage is a fixed transparent window; only the island view animates.
+// Geometry derives from the physical notch so the island reads as the
+// notch itself growing: same top edge, wings past its sides, deep
+// rounding on the bottom corners only.
+struct Notch {
+    let width: CGFloat
+    let height: CGFloat
+    let exists: Bool
+
+    static func read() -> Notch {
+        guard let screen = NSScreen.main else { return Notch(width: 200, height: 32, exists: false) }
+        let top = screen.safeAreaInsets.top
+        if top > 0 {
+            let left = screen.auxiliaryTopLeftArea?.width ?? 0
+            let right = screen.auxiliaryTopRightArea?.width ?? 0
+            let w = screen.frame.width - left - right
+            return Notch(width: max(120, w), height: top, exists: true)
+        }
+        return Notch(width: 200, height: 32, exists: false)
+    }
+}
+
+let NOTCH = Notch.read()
+// Collapsed: hugs the notch, wings extending past it, a content strip below.
+let COLLAPSED = NSSize(width: max(NOTCH.width + 44, 340), height: NOTCH.height + 30)
+let HOVERED = NSSize(width: COLLAPSED.width + 14, height: COLLAPSED.height + 3)
+let EXPANDED = NSSize(width: max(COLLAPSED.width + 90, 432), height: NOTCH.height + 158)
+let STAGE = NSSize(width: EXPANDED.width + 40, height: EXPANDED.height + 30)
+let RADIUS_COLLAPSED: CGFloat = 12
+let RADIUS_EXPANDED: CGFloat = 24
+
+func islandRect(_ size: NSSize) -> NSRect {
+    NSRect(x: (STAGE.width - size.width) / 2, y: STAGE.height - size.height,
+           width: size.width, height: size.height)
+}
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     var panel: NSPanel!
-    var container: NSView!
+    var stage: NSView!
+    var island: NSView!
     var mascotView: NSImageView!
     var label: NSTextField!
     var barTrack: NSView!
@@ -61,6 +95,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     var expandTimer: Timer?
     var collapseTimer: Timer?
     var isExpanded = false
+    var isHovering = false
 
     var currentFixture = 0
     var loadedFixture = 0
@@ -68,12 +103,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     var pinnedFixture = 0
     var pinnedUntil = Date.distantPast
 
-    // MARK: launch
-
     func applicationDidFinishLaunching(_ notification: Notification) {
         loadAssets()
         makeStatusItem()
-        makeIsland()
+        makeStage()
         enterFromNotch()
         refresh()
         pollTimer = Timer.scheduledTimer(withTimeInterval: 15, repeats: true) { [weak self] _ in
@@ -82,7 +115,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NotificationCenter.default.addObserver(
             forName: NSApplication.didChangeScreenParametersNotification,
             object: nil, queue: .main
-        ) { [weak self] _ in self?.seat(animated: false) }
+        ) { [weak self] _ in self?.placeWindow() }
     }
 
     func loadAssets() {
@@ -102,41 +135,60 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem.menu = menu
     }
 
-    func makeIsland() {
+    func placeWindow() {
+        guard let screen = NSScreen.main else { return }
+        let f = screen.frame
+        panel.setFrame(
+            NSRect(x: f.midX - STAGE.width / 2, y: f.maxY - STAGE.height,
+                   width: STAGE.width, height: STAGE.height),
+            display: true
+        )
+    }
+
+    func makeStage() {
         panel = NSPanel(
-            contentRect: NSRect(origin: .zero, size: COLLAPSED),
+            contentRect: NSRect(origin: .zero, size: STAGE),
             styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered, defer: false
         )
         panel.level = .statusBar
         panel.isOpaque = false
         panel.backgroundColor = .clear
-        panel.hasShadow = true
+        panel.hasShadow = false
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
         panel.hidesOnDeactivate = false
+        panel.ignoresMouseEvents = false
 
-        container = NSView(frame: NSRect(origin: .zero, size: COLLAPSED))
-        container.wantsLayer = true
-        container.layer?.backgroundColor = NSColor.black.cgColor
-        container.layer?.cornerRadius = 15
-        container.layer?.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
-        container.layer?.borderWidth = 0.5
-        container.layer?.borderColor = NSColor(white: 1, alpha: 0.14).cgColor
-        container.autoresizesSubviews = false
+        stage = NSView(frame: NSRect(origin: .zero, size: STAGE))
+        stage.wantsLayer = true
 
-        mascotView = NSImageView(frame: NSRect(x: 10, y: 9, width: 20, height: 20))
+        island = NSView(frame: islandRect(COLLAPSED))
+        island.wantsLayer = true
+        island.layer?.backgroundColor = NSColor.black.cgColor
+        island.layer?.cornerRadius = RADIUS_COLLAPSED
+        island.layer?.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
+        island.layer?.borderWidth = 0.5
+        island.layer?.borderColor = NSColor(white: 1, alpha: 0.14).cgColor
+        island.layer?.shadowColor = NSColor.black.cgColor
+        island.layer?.shadowOpacity = 0.5
+        island.layer?.shadowRadius = 14
+        island.layer?.shadowOffset = CGSize(width: 0, height: -4)
+        island.autoresizesSubviews = false
+        stage.addSubview(island)
+
+        mascotView = NSImageView(frame: NSRect(x: 12, y: 7, width: 20, height: 20))
         mascotView.image = mascotIdle
         mascotView.imageScaling = .scaleProportionallyUpOrDown
-        container.addSubview(mascotView)
+        island.addSubview(mascotView)
 
         label = NSTextField(labelWithString: "Fervor")
         label.font = NSFont.monospacedDigitSystemFont(ofSize: 13, weight: .semibold)
         label.textColor = .white
         label.alignment = .center
-        label.frame = NSRect(x: 34, y: 11, width: COLLAPSED.width - 48, height: 18)
-        container.addSubview(label)
+        label.frame = NSRect(x: 36, y: 8, width: COLLAPSED.width - 52, height: 18)
+        island.addSubview(label)
 
-        barTrack = NSView(frame: NSRect(x: 20, y: 5, width: COLLAPSED.width - 40, height: 3))
+        barTrack = NSView(frame: NSRect(x: 22, y: 3, width: COLLAPSED.width - 44, height: 3))
         barTrack.wantsLayer = true
         barTrack.layer?.backgroundColor = NSColor(white: 1, alpha: 0.15).cgColor
         barTrack.layer?.cornerRadius = 1.5
@@ -147,72 +199,67 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             bar.layer?.backgroundColor = color.cgColor
             barTrack.addSubview(bar)
         }
-        container.addSubview(barTrack)
+        island.addSubview(barTrack)
 
         let tracking = NSTrackingArea(
             rect: .zero,
-            options: [.mouseEnteredAndExited, .activeAlways, .inVisibleRect],
+            options: [.mouseEnteredAndExited, .mouseMoved, .activeAlways, .inVisibleRect],
             owner: self, userInfo: nil
         )
-        container.addTrackingArea(tracking)
+        island.addTrackingArea(tracking)
         let click = NSClickGestureRecognizer(target: self, action: #selector(toggleExpand))
-        container.addGestureRecognizer(click)
+        island.addGestureRecognizer(click)
 
-        panel.contentView = container
+        panel.contentView = stage
+        placeWindow()
     }
 
-    // MARK: geometry + entrance
+    // MARK: fluid transitions (all Core Animation, never the window)
 
-    func targetFrame(_ size: NSSize) -> NSRect {
-        guard let screen = NSScreen.main else { return NSRect(origin: .zero, size: size) }
-        let f = screen.frame
-        return NSRect(x: f.midX - size.width / 2, y: f.maxY - size.height,
-                      width: size.width, height: size.height)
+    func morph(to size: NSSize, radius: CGFloat, duration: TimeInterval,
+               spring: Bool = true, then: (() -> Void)? = nil) {
+        NSAnimationContext.runAnimationGroup({ ctx in
+            ctx.duration = duration
+            ctx.allowsImplicitAnimation = true
+            ctx.timingFunction = spring
+                ? CAMediaTimingFunction(controlPoints: 0.32, 1.25, 0.5, 1)
+                : CAMediaTimingFunction(name: .easeOut)
+            island.animator().frame = islandRect(size)
+            island.layer?.cornerRadius = radius
+        }, completionHandler: then)
     }
 
-    func seat(animated: Bool) {
-        let frame = targetFrame(isExpanded ? EXPANDED : COLLAPSED)
-        if animated {
-            NSAnimationContext.runAnimationGroup { ctx in
-                ctx.duration = 0.3
-                panel.animator().setFrame(frame, display: true)
-            }
-        } else {
-            panel.setFrame(frame, display: true)
-        }
-    }
-
-    /// Slide down from behind the notch on launch.
     func enterFromNotch() {
-        let final = targetFrame(COLLAPSED)
-        var hidden = final
-        hidden.origin.y = final.maxY // fully above the screen edge
-        panel.setFrame(hidden, display: false)
+        var start = islandRect(COLLAPSED)
+        start.origin.y = STAGE.height + 4
+        island.frame = start
         panel.orderFrontRegardless()
-        NSAnimationContext.runAnimationGroup { ctx in
-            ctx.duration = 0.45
-            ctx.timingFunction = CAMediaTimingFunction(controlPoints: 0.2, 1.25, 0.5, 1)
-            panel.animator().setFrame(final, display: true)
-        }
+        morph(to: COLLAPSED, radius: RADIUS_COLLAPSED, duration: 0.5)
     }
-
-    // MARK: hover intent + morph
 
     @objc func mouseEntered(with event: NSEvent) {
         collapseTimer?.invalidate()
+        isHovering = true
         guard !isExpanded else { return }
+        // breathe toward the cursor immediately…
+        morph(to: HOVERED, radius: RADIUS_COLLAPSED + 2, duration: 0.25)
+        // …and open fully after a beat of intent
         expandTimer?.invalidate()
-        expandTimer = Timer.scheduledTimer(withTimeInterval: 0.12, repeats: false) { [weak self] _ in
+        expandTimer = Timer.scheduledTimer(withTimeInterval: 0.18, repeats: false) { [weak self] _ in
             self?.expand()
         }
     }
 
     @objc func mouseExited(with event: NSEvent) {
+        isHovering = false
         expandTimer?.invalidate()
-        guard isExpanded else { return }
-        collapseTimer?.invalidate()
-        collapseTimer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: false) { [weak self] _ in
-            self?.collapse()
+        if isExpanded {
+            collapseTimer?.invalidate()
+            collapseTimer = Timer.scheduledTimer(withTimeInterval: 0.3, repeats: false) { [weak self] _ in
+                self?.collapse()
+            }
+        } else {
+            morph(to: COLLAPSED, radius: RADIUS_COLLAPSED, duration: 0.3)
         }
     }
 
@@ -222,10 +269,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func ensureWebView() {
         if webView == nil {
-            let web = WKWebView(frame: NSRect(x: 8, y: 8, width: EXPANDED.width - 16, height: EXPANDED.height - 16))
+            let web = WKWebView(frame: NSRect(x: 8, y: 8, width: EXPANDED.width - 16, height: EXPANDED.height - NOTCH.height - 14))
             web.alphaValue = 0
             web.setValue(false, forKey: "drawsBackground")
-            container.addSubview(web)
+            island.addSubview(web)
             webView = web
         }
         if loadedFixture != currentFixture, currentFixture != 0 {
@@ -238,34 +285,41 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard !isExpanded, currentFixture != 0 else { return }
         isExpanded = true
         ensureWebView()
-        webView?.frame = NSRect(x: 8, y: 8, width: EXPANDED.width - 16, height: EXPANDED.height - 16)
+        webView?.frame = NSRect(x: 8, y: 8, width: EXPANDED.width - 16, height: EXPANDED.height - NOTCH.height - 14)
+        webView?.layer?.setAffineTransform(CGAffineTransform(scaleX: 0.97, y: 0.97))
 
+        morph(to: EXPANDED, radius: RADIUS_EXPANDED, duration: 0.42)
         NSAnimationContext.runAnimationGroup { ctx in
-            ctx.duration = 0.36
+            ctx.duration = 0.28
             ctx.allowsImplicitAnimation = true
-            ctx.timingFunction = CAMediaTimingFunction(controlPoints: 0.3, 1.28, 0.55, 1) // spring overshoot
-            panel.animator().setFrame(targetFrame(EXPANDED), display: true)
-            container.layer?.cornerRadius = 22
             label.animator().alphaValue = 0
             barTrack.animator().alphaValue = 0
             mascotView.animator().alphaValue = 0
+        }
+        NSAnimationContext.runAnimationGroup { ctx in
+            ctx.duration = 0.42
+            ctx.allowsImplicitAnimation = true
             webView?.animator().alphaValue = 1
+            webView?.layer?.setAffineTransform(.identity)
         }
     }
 
     func collapse() {
         guard isExpanded else { return }
         isExpanded = false
+        morph(to: isHovering ? HOVERED : COLLAPSED,
+              radius: isHovering ? RADIUS_COLLAPSED + 2 : RADIUS_COLLAPSED, duration: 0.34)
         NSAnimationContext.runAnimationGroup { ctx in
-            ctx.duration = 0.28
+            ctx.duration = 0.2
             ctx.allowsImplicitAnimation = true
-            ctx.timingFunction = CAMediaTimingFunction(name: .easeOut)
-            panel.animator().setFrame(targetFrame(COLLAPSED), display: true)
-            container.layer?.cornerRadius = 15
+            webView?.animator().alphaValue = 0
+        }
+        NSAnimationContext.runAnimationGroup { ctx in
+            ctx.duration = 0.3
+            ctx.allowsImplicitAnimation = true
             label.animator().alphaValue = 1
             barTrack.animator().alphaValue = 1
             mascotView.animator().alphaValue = 1
-            webView?.animator().alphaValue = 0
         }
     }
 
@@ -299,13 +353,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     probAway: probs?["away"] as? Double
                 ))
             }
-
             DispatchQueue.main.async { self.apply(matches) }
         }.resume()
     }
 
     func apply(_ matches: [MatchInfo]) {
-        // Every goal, anywhere, takes over the island
         var goalMatch: MatchInfo? = nil
         for m in matches {
             let key = "\(m.scoreHome)-\(m.scoreAway)"
@@ -352,11 +404,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard !isExpanded else { label.stringValue = text; return }
         NSAnimationContext.runAnimationGroup { ctx in
             ctx.duration = 0.12
+            ctx.allowsImplicitAnimation = true
             label.animator().alphaValue = 0
         } completionHandler: {
             self.label.stringValue = text
             NSAnimationContext.runAnimationGroup { ctx in
                 ctx.duration = 0.18
+                ctx.allowsImplicitAnimation = true
                 self.label.animator().alphaValue = 1
             }
         }
@@ -373,7 +427,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let hw = w * h / total
         let dw = w * d / total
         NSAnimationContext.runAnimationGroup { ctx in
-            ctx.duration = 0.5
+            ctx.duration = 0.6
             ctx.allowsImplicitAnimation = true
             barHome.frame = NSRect(x: 0, y: 0, width: hw, height: 3)
             barDraw.frame = NSRect(x: hw, y: 0, width: dw, height: 3)
@@ -389,16 +443,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         guard !isExpanded else { return }
         let big = NSSize(width: COLLAPSED.width + 44, height: COLLAPSED.height + 8)
-        NSAnimationContext.runAnimationGroup { ctx in
-            ctx.duration = 0.18
-            ctx.timingFunction = CAMediaTimingFunction(controlPoints: 0.3, 1.4, 0.6, 1)
-            panel.animator().setFrame(targetFrame(big), display: true)
-        } completionHandler: {
-            NSAnimationContext.runAnimationGroup { ctx in
-                ctx.duration = 0.3
-                ctx.timingFunction = CAMediaTimingFunction(name: .easeOut)
-                self.panel.animator().setFrame(self.targetFrame(COLLAPSED), display: true)
-            }
+        morph(to: big, radius: RADIUS_COLLAPSED + 3, duration: 0.2) {
+            self.morph(to: self.isHovering ? HOVERED : COLLAPSED,
+                       radius: self.isHovering ? RADIUS_COLLAPSED + 2 : RADIUS_COLLAPSED, duration: 0.34)
         }
     }
 }
