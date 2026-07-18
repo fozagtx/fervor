@@ -59,12 +59,12 @@ struct Notch {
 }
 
 let NOTCH = Notch.read()
-let COLLAPSED = NSSize(width: max(NOTCH.width + 44, 340), height: NOTCH.height + 30)
-let HOVERED = NSSize(width: COLLAPSED.width, height: COLLAPSED.height + 4)
+let COLLAPSED = NSSize(width: NOTCH.width + 156, height: NOTCH.height)
+let HOVERED = NSSize(width: COLLAPSED.width + 6, height: COLLAPSED.height + 6)
 let EXPANDED_WIDTH: CGFloat = max(COLLAPSED.width + 180, 560)
 let ROW_H: CGFloat = 42
 let STAGE = NSSize(width: EXPANDED_WIDTH + 40, height: NOTCH.height + 420)
-let RADIUS_COLLAPSED: CGFloat = 12
+let RADIUS_COLLAPSED: CGFloat = 10
 let RADIUS_EXPANDED: CGFloat = 26
 
 func islandRect(_ size: NSSize) -> NSRect {
@@ -210,21 +210,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         island.autoresizesSubviews = false
         stage.addSubview(island)
 
-        // Collapsed strip content
-        collapsedContent = NSView(frame: NSRect(x: 0, y: 0, width: COLLAPSED.width, height: 30))
-        mascotView = NSImageView(frame: NSRect(x: 12, y: 6, width: 20, height: 20))
+        // Compact wings: mascot left of the camera, readout to its right
+        collapsedContent = NSView(frame: NSRect(x: 0, y: 0, width: COLLAPSED.width, height: COLLAPSED.height))
+        let wing = (COLLAPSED.width - NOTCH.width) / 2
+        let midY = (COLLAPSED.height - 18) / 2
+        mascotView = NSImageView(frame: NSRect(x: (wing - 18) / 2, y: midY, width: 18, height: 18))
         mascotView.image = mascotIdle
         mascotView.imageScaling = .scaleProportionallyUpOrDown
         collapsedContent.addSubview(mascotView)
 
-        label = NSTextField(labelWithString: "Fervor")
-        label.font = NSFont.monospacedDigitSystemFont(ofSize: 13, weight: .semibold)
+        label = NSTextField(labelWithString: "⚽")
+        label.font = NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .semibold)
         label.textColor = .white
         label.alignment = .center
-        label.frame = NSRect(x: 36, y: 7, width: COLLAPSED.width - 52, height: 18)
+        label.frame = NSRect(x: COLLAPSED.width - wing + 2, y: midY + 1, width: wing - 8, height: 15)
         collapsedContent.addSubview(label)
 
         barTrack = NSView(frame: NSRect(x: 22, y: 2, width: COLLAPSED.width - 44, height: 3))
+        barTrack.isHidden = true
         barTrack.wantsLayer = true
         barTrack.layer?.backgroundColor = NSColor(white: 1, alpha: 0.15).cgColor
         barTrack.layer?.cornerRadius = 1.5
@@ -586,16 +589,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let text: String
         if pick.isLive {
-            let min = pick.minute.map { "\(Int($0))′" } ?? "LIVE"
-            text = "\(flag(pick.home)) \(pick.scoreHome)–\(pick.scoreAway) \(flag(pick.away))  \(min)"
+            let min = pick.minute.map { " \(Int($0))′" } ?? ""
+            text = "\(pick.scoreHome)–\(pick.scoreAway)\(min)"
         } else {
             let fmt = DateFormatter()
             fmt.dateFormat = "HH:mm"
-            let t = fmt.string(from: Date(timeIntervalSince1970: pick.startTime / 1000))
-            text = "\(flag(pick.home)) vs \(flag(pick.away))  \(t)"
+            text = fmt.string(from: Date(timeIntervalSince1970: pick.startTime / 1000))
         }
         if label.stringValue != text { crossfadeLabel(to: text) }
-        setProbs(home: pick.probHome, draw: pick.probDraw, away: pick.probAway)
     }
 
     func crossfadeLabel(to text: String) {
@@ -618,7 +619,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             barTrack.isHidden = true
             return
         }
-        barTrack.isHidden = false
         let w = barTrack.bounds.width
         let total = max(1, h + d + a)
         let hw = w * h / total
@@ -641,7 +641,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.footerMascot?.image = self?.mascotIdle
         }
         guard !isExpanded else { return }
-        let big = NSSize(width: COLLAPSED.width + 44, height: COLLAPSED.height + 8)
+        let big = NSSize(width: COLLAPSED.width + 30, height: COLLAPSED.height + 8)
         morph(to: big, radius: RADIUS_COLLAPSED + 3, duration: 0.2) {
             self.morph(to: self.isHovering ? HOVERED : COLLAPSED,
                        radius: self.isHovering ? RADIUS_COLLAPSED + 2 : RADIUS_COLLAPSED, duration: 0.34)
