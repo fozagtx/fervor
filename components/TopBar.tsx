@@ -4,6 +4,7 @@ import { Chip } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import Logo from "./Logo";
 import ThemeToggle from "./ThemeToggle";
 import WalletButton from "./WalletButton";
 
@@ -27,9 +28,7 @@ export default function TopBar({
   return (
     <div className="flex items-center justify-between rounded-large border-small border-default-200 bg-content1 px-4 py-3 shadow-sm">
       <Link href="/" className="flex min-w-0 flex-1 items-center gap-3">
-        <div className="flex shrink-0 items-center justify-center rounded-medium border border-primary-100 bg-primary-50 p-2">
-          <Icon icon="solar:heart-pulse-bold-duotone" className="text-primary" width={22} />
-        </div>
+        <Logo size={38} />
         <div className="flex min-w-0 flex-col">
           <p className="whitespace-nowrap text-medium font-semibold leading-tight">Match Pulse</p>
           <p className="truncate text-tiny leading-tight text-default-400">World Cup, second by second</p>

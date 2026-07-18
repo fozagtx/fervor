@@ -207,6 +207,34 @@ export async function ensureMaterialized(fixtureId: number, startTime: number): 
 }
 
 /**
+ * Build the full normalized history of a finished fixture (probability
+ * series plus events) from its stored timeline, for instant display
+ * without running a replay.
+ */
+export function historyFor(
+  match: MatchState
+): { probs: MatchState["probs"]; events: MatchState["events"] } | null {
+  let timeline = loadMaterialized(match.fixtureId);
+  if (timeline.length < 10) timeline = loadRecordings(match.fixtureId);
+  if (timeline.length < 10) return null;
+  timeline = trimToMatch(timeline);
+  const scratch: MatchState = { ...match, scoreHome: 0, scoreAway: 0, statusId: undefined, probs: [], events: [] };
+  for (const item of timeline) {
+    if (item.kind === "odds") {
+      const point = oddsToProbPoint(item.data as TxOddsPayload, scratch.p1IsHome);
+      if (!point) continue;
+      const prev = scratch.probs[scratch.probs.length - 1];
+      if (prev && prev.ts >= point.ts) continue;
+      scratch.probs.push(point);
+    } else {
+      applyScores(scratch, item.data as TxScores);
+    }
+  }
+  if (scratch.probs.length < 5) return null;
+  return { probs: scratch.probs, events: scratch.events };
+}
+
+/**
  * Derive the final score and state of a fixture from its stored timeline by
  * running every scores message through the normal pipeline on a scratch copy.
  */

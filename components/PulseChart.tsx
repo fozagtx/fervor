@@ -2,6 +2,7 @@
 
 import React, { useMemo, useRef, useState } from "react";
 import type { MatchEvent, ProbPoint } from "@/lib/txline/types";
+import { flagOf } from "@/lib/flags";
 
 const W = 820;
 const H = 300;
@@ -217,6 +218,7 @@ function Stat({
   return (
     <div className={`flex min-w-0 flex-col ${alignCls}`}>
       <p className="w-full truncate text-tiny font-medium uppercase tracking-wide" style={{ color }}>
+        {flagOf(name) && <span className="mr-1">{flagOf(name)}</span>}
         {name}
       </p>
       <p className="font-mono text-2xl font-semibold tabular-nums leading-tight">

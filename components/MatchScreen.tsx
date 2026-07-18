@@ -2,6 +2,7 @@
 
 import { Button, Card, CardBody, CardHeader, Chip, Skeleton } from "@heroui/react";
 import { Icon } from "@iconify/react";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import TopBar from "@/components/TopBar";
 import ScoreHeader from "@/components/ScoreHeader";
@@ -12,6 +13,7 @@ import ProofBadge from "@/components/ProofBadge";
 import RecapCard from "@/components/RecapCard";
 import { PunditCaption, PunditToggle } from "@/components/PunditVoice";
 import { useMatchStream } from "@/lib/useMatchStream";
+import type { MatchState } from "@/lib/txline/types";
 
 const SPEEDS = [10, 30, 60];
 
@@ -20,7 +22,29 @@ export default function MatchScreen({ fixtureId }: { fixtureId: number }) {
   const [speed, setSpeed] = useState(30);
   const [pundit, setPundit] = useState(false);
   const { matches, connected, replayDone } = useMatchStream({ fixtureId, replay, speed });
-  const match = matches.get(fixtureId);
+  const streamMatch = matches.get(fixtureId);
+
+  // Finished matches show their full recorded history without needing replay
+  const [history, setHistory] = useState<{ probs: MatchState["probs"]; events: MatchState["events"] } | null>(null);
+  const streamFinished = /(ft|full|final|ended|finish)/.test(streamMatch?.gameState.toLowerCase() ?? "");
+  useEffect(() => {
+    if (replay || !streamFinished || !streamMatch || streamMatch.probs.length > 5) return;
+    let stale = false;
+    fetch(`/api/history/${fixtureId}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((h) => {
+        if (!stale && h?.probs) setHistory(h);
+      })
+      .catch(() => {});
+    return () => {
+      stale = true;
+    };
+  }, [fixtureId, replay, streamFinished, streamMatch]);
+
+  const match: MatchState | undefined =
+    streamMatch && !replay && history && streamMatch.probs.length <= 5
+      ? { ...streamMatch, probs: history.probs, events: history.events }
+      : streamMatch;
 
   const g = match?.gameState.toLowerCase() ?? "";
   const finished = /(ft|full|final|ended|finish)/.test(g);
@@ -55,6 +79,18 @@ export default function MatchScreen({ fixtureId }: { fixtureId: number }) {
         </Card>
       ) : (
         <>
+          <Button
+            as={Link}
+            href="/matches"
+            size="sm"
+            radius="full"
+            variant="light"
+            className="w-fit -translate-x-2 text-default-500"
+            startContent={<Icon icon="solar:alt-arrow-left-linear" width={15} />}
+          >
+            All matches
+          </Button>
+
           <ScoreHeader match={match} replay={replay} />
 
           {!replay && canReplay && (
