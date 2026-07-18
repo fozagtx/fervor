@@ -34,15 +34,20 @@ body {
   color: #18181b;
 }
 
-/* Floating mini scoreboard popup — don't force full-viewport chrome */
+/* /mini scoreboard — pure black stage, no app chrome bleed */
 html:has([data-torq-mini]),
 body:has([data-torq-mini]) {
-  min-height: 0 !important;
+  margin: 0 !important;
+  min-height: 100% !important;
   height: 100% !important;
   overflow: hidden !important;
-  background: #0a0a0a !important;
-  color: #fafafa !important;
+  background: #000000 !important;
+  color: #ffffff !important;
   color-scheme: dark;
+}
+
+body:has([data-torq-mini]) [data-overlay-container] {
+  height: 100%;
 }
 
 .dark body {
