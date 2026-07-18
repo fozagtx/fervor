@@ -99,6 +99,17 @@ Environment variables:
 - **Restart-proof:** feed history rehydrates from disk on boot; stream watchdog reconnects silent feeds; known results ship in the bundle so cold boots show real scores instantly.
 - **Light and dark themes:** light by default, persisted toggle.
 
+## Fervor for macOS
+
+A native menu-bar companion keeps the most interesting match in your menu bar — flags, score and minute — and clicking it drops down the island mini scoreboard, streaming live.
+
+```bash
+./macos/build.sh
+open macos/dist/Fervor.app   # unsigned: right-click → Open on first launch
+```
+
+The web app also installs directly from the browser on desktop and phones (Add to Home Screen / Install Fervor).
+
 ## API
 
 | Endpoint | Purpose |
