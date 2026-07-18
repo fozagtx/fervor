@@ -1,3 +1,10 @@
+allowBuilds:
+  '@heroui/shared-utils': true
+  bigint-buffer: true
+  bufferutil: true
+  esbuild: true
+  sharp: true
+  utf-8-validate: true
 ignoredBuiltDependencies:
   - sharp
   - unrs-resolver

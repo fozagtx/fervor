@@ -1,26 +1,42 @@
 @import "tailwindcss";
+@plugin "../hero.ts";
+@source "../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}";
+@custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  font-family: var(--font-sans);
+  background: #09090b;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  min-height: 100dvh;
+  background:
+    radial-gradient(60rem 40rem at 85% -10%, rgba(16, 185, 129, 0.07), transparent 60%),
+    radial-gradient(50rem 35rem at -10% 110%, rgba(129, 140, 248, 0.05), transparent 60%),
+    #09090b;
+  color: #fafafa;
+}
+
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(0.8);
+  }
+}
+.live-dot {
+  animation: pulse-dot 1.6s ease-in-out infinite;
 }

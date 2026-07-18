@@ -39,3 +39,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+.txline/
+_keys/
+data/recordings/*/odds-*.jsonl
+data/recordings/*/scores-*.jsonl
+
+.playwright-mcp/
+*.jpeg
+*.png
+!public/*.png

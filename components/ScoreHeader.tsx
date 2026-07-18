@@ -1,0 +1,61 @@
+"use client";
+
+import { Card, CardBody, Chip } from "@heroui/react";
+import type { MatchState } from "@/lib/txline/types";
+import { COLORS } from "./PulseChart";
+
+export default function ScoreHeader({ match, replay }: { match: MatchState; replay?: boolean }) {
+  const g = match.gameState.toLowerCase();
+  const live = !/(sched|not|pre|ft|full|final|ended|finish)/.test(g);
+  const finished = /(ft|full|final|ended|finish)/.test(g);
+
+  return (
+    <Card shadow="sm" className="border-small border-default-200">
+      <CardBody className="gap-4 p-5">
+        <div className="flex items-center justify-between">
+          <Chip size="sm" variant="flat" className="text-default-500">
+            {match.competition}
+          </Chip>
+          {replay ? (
+            <Chip size="sm" variant="flat" color="secondary" className="font-mono">
+              REPLAY
+            </Chip>
+          ) : live ? (
+            <Chip
+              size="sm"
+              variant="flat"
+              color="primary"
+              startContent={<span className="live-dot ml-1 inline-block h-2 w-2 rounded-full bg-primary" />}
+            >
+              {match.minute ? `${Math.floor(match.minute)}′` : "LIVE"}
+            </Chip>
+          ) : (
+            <Chip size="sm" variant="flat" className="text-default-500">
+              {finished
+                ? "Full-time"
+                : new Date(match.startTime).toLocaleString(undefined, { weekday: "short", hour: "2-digit", minute: "2-digit" })}
+            </Chip>
+          )}
+        </div>
+
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+          <div className="flex flex-col items-start gap-1">
+            <span className="h-1.5 w-8 rounded-full" style={{ background: COLORS.home }} />
+            <p className="text-large font-semibold leading-tight">{match.home}</p>
+          </div>
+          <p className="px-2 font-mono text-4xl font-semibold tabular-nums">
+            {match.scoreHome}
+            <span className="px-1 text-default-300">–</span>
+            {match.scoreAway}
+          </p>
+          <div className="flex flex-col items-end gap-1">
+            <span className="h-1.5 w-8 rounded-full" style={{ background: COLORS.away }} />
+            <p className="text-right text-large font-semibold leading-tight">{match.away}</p>
+          </div>
+        </div>
+
+        <p className="text-center text-tiny text-default-400">{match.gameState}</p>
+      </CardBody>
+    </Card>
+  );
+}
