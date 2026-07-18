@@ -13,6 +13,8 @@ Most fans watch with a phone in their hand. The one thing the big operators alwa
 - **Beat the market** — pick higher/lower on a team's win chance five match-minutes out, settle against the actual feed, build streaks, share. Skill game; no wagering.
 - **Replay engine** — every match is replayable at 10×/30×/60× through the exact same streaming pipeline as live. Judges reviewing after July 19 can relive the real semifinals, bronze final and final inside the app.
 - **Pundit voice** — optional spoken commentary that fuses score and market context per event.
+- **Provably real scorelines** — one tap fetches the goal-stat Merkle proofs and has the TxOracle program verify the exact final score (`validateStatV2` with equality predicates for both teams' goals) plus the fixture data, as read-only simulations. The scoreline a fan sees is proven on Solana, not just reported.
+- **Optional wallet identity** — Phantom connect saves a fan's call record to their wallet; never a transaction, never required.
 
 ## Technical highlights
 
@@ -37,6 +39,8 @@ Most fans watch with a phone in their hand. The one thing the big operators alwa
 - `GET /api/odds/snapshot/{fixtureId}?asOf=…`
 - `GET /api/scores/historical/{fixtureId}`
 - `GET /api/odds/updates/{epochDay}/{hourOfDay}/{interval}`
+- `GET /api/fixtures/validation` + on-chain `validateFixture` (view simulation)
+- `GET /api/scores/stat-validation` + on-chain `validateStatV2` (view simulation)
 
 ## API feedback
 
