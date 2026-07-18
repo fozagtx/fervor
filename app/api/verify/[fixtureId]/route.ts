@@ -3,7 +3,8 @@ import * as anchor from "@coral-xyz/anchor";
 import { ComputeBudgetProgram, Connection, PublicKey } from "@solana/web3.js";
 import TxoracleJson from "@/idl/txoracle.json";
 import type { Txoracle } from "@/idl/txoracle-types";
-import { SOLANA_RPC_URL, WORLD_CUP_COMPETITION_ID } from "@/lib/txline/config";
+import { API_BASE, SOLANA_RPC_URL, WORLD_CUP_COMPETITION_ID } from "@/lib/txline/config";
+import { getAuth } from "@/lib/txline/auth";
 import { txGet } from "@/lib/txline/api";
 import type { TxFixture } from "@/lib/txline/types";
 
@@ -45,6 +46,124 @@ interface ValidationResponse {
   };
   subTreeProof: unknown;
   mainTreeProof: unknown;
+}
+
+interface ProofNodeApi {
+  hash: number[];
+  isRightSibling: boolean;
+}
+
+const mapProof = (nodes: ProofNodeApi[]) =>
+  nodes.map((n) => ({ hash: Array.from(n.hash), isRightSibling: n.isRightSibling }));
+
+async function rawGetText(pathAndQuery: string, jwt: string, apiToken: string): Promise<string> {
+  const res = await fetch(`${API_BASE}${pathAndQuery}`, {
+    headers: { Authorization: `Bearer ${jwt}`, "X-Api-Token": apiToken },
+  });
+  if (!res.ok) throw new Error(`${res.status}`);
+  return res.text();
+}
+
+function parseSseLines<T>(text: string): T[] {
+  const out: T[] = [];
+  for (const line of text.split("\n")) {
+    const m = line.match(/^data:\s*(\{.*\})\s*$/);
+    if (m) {
+      try {
+        out.push(JSON.parse(m[1]) as T);
+      } catch {
+        // skip malformed line
+      }
+    }
+  }
+  return out;
+}
+
+/**
+ * Proves the final scoreline on-chain: fetches the Merkle proof for the last
+ * scores message's goal stats and simulates validateStatV2 with EqualTo
+ * predicates for both teams' goals. Returns null when unavailable.
+ */
+async function proveScoreline(
+  program: anchor.Program<Txoracle>,
+  connection: Connection,
+  id: number,
+  jwt: string,
+  apiToken: string
+): Promise<{ p1Goals: number; p2Goals: number; rootsAccount: string; computeUnits?: number } | null> {
+  const hist = parseSseLines<{ Seq?: number; Stats?: Record<string, number>; FixtureId?: number }>(
+    await rawGetText(`/scores/historical/${id}`, jwt, apiToken)
+  );
+  const withStats = hist.filter(
+    (e) => e.FixtureId === id && e.Stats && "1" in e.Stats && "1001" in e.Stats
+  );
+  const last = withStats[withStats.length - 1];
+  if (!last?.Seq) return null;
+
+  const valText = await rawGetText(
+    `/scores/stat-validation?fixtureId=${id}&seq=${last.Seq}&statKeys=1,1001`,
+    jwt,
+    apiToken
+  );
+  const v = JSON.parse(valText);
+  const stats: Array<{ key: number; value: number }> = v.statsToProve || [];
+  if (stats.length !== 2) return null;
+  const p1Goals = stats[0].value;
+  const p2Goals = stats[1].value;
+
+  const targetTs = v.summary.updateStats.minTimestamp;
+  const epochDay = Math.floor(targetTs / 86400000);
+  const [dailyScoresPda] = PublicKey.findProgramAddressSync(
+    [Buffer.from("daily_scores_roots"), new anchor.BN(epochDay).toBuffer("le", 2)],
+    program.programId
+  );
+
+  const payload = {
+    ts: new anchor.BN(targetTs),
+    fixtureSummary: {
+      fixtureId: new anchor.BN(v.summary.fixtureId),
+      updateStats: {
+        updateCount: v.summary.updateStats.updateCount,
+        minTimestamp: new anchor.BN(v.summary.updateStats.minTimestamp),
+        maxTimestamp: new anchor.BN(v.summary.updateStats.maxTimestamp),
+      },
+      eventsSubTreeRoot: Array.from(v.summary.eventStatsSubTreeRoot),
+    },
+    fixtureProof: mapProof(v.subTreeProof),
+    mainTreeProof: mapProof(v.mainTreeProof),
+    eventStatRoot: Array.from(v.eventStatRoot),
+    stats: (v.statsToProve as unknown[]).map((statObj, index: number) => ({
+      stat: statObj,
+      statProof: mapProof(v.statProofs[index]),
+    })),
+  };
+
+  const strategy = {
+    geometricTargets: [],
+    distancePredicate: null,
+    discretePredicates: [
+      { single: { index: 0, predicate: { threshold: p1Goals, comparison: { equalTo: {} } } } },
+      { single: { index: 1, predicate: { threshold: p2Goals, comparison: { equalTo: {} } } } },
+    ],
+  };
+
+  const tx = await program.methods
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .validateStatV2(payload as any, strategy as any)
+    .accounts({ dailyScoresMerkleRoots: dailyScoresPda })
+    .preInstructions([ComputeBudgetProgram.setComputeUnitLimit({ units: 1_400_000 })])
+    .transaction();
+  tx.feePayer = FEE_PAYER;
+  tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+  const sim = await connection.simulateTransaction(tx);
+  if (sim.value.err) return null;
+
+  return {
+    p1Goals,
+    p2Goals,
+    rootsAccount: dailyScoresPda.toBase58(),
+    computeUnits: sim.value.unitsConsumed,
+  };
 }
 
 export async function GET(
@@ -143,6 +262,16 @@ export async function GET(
       );
     }
 
+    // Second proof: the final scoreline itself (best effort — some fixtures
+    // have no stat coverage; the fixture proof alone still stands)
+    let score: Awaited<ReturnType<typeof proveScoreline>> = null;
+    try {
+      const { jwt, apiToken } = await getAuth();
+      score = await proveScoreline(program, connection, id, jwt, apiToken);
+    } catch {
+      score = null;
+    }
+
     return NextResponse.json({
       verified: true,
       fixture: `${fixture.Participant1} vs ${fixture.Participant2}`,
@@ -150,6 +279,16 @@ export async function GET(
       programId: program.programId.toBase58(),
       merkleRootsAccount: rootsPda.toBase58(),
       computeUnits: simulation.value.unitsConsumed,
+      score: score
+        ? {
+            proven: true,
+            scoreline: `${score.p1Goals}–${score.p2Goals}`,
+            participant1: fixture.Participant1,
+            participant2: fixture.Participant2,
+            merkleRootsAccount: score.rootsAccount,
+            computeUnits: score.computeUnits,
+          }
+        : { proven: false },
     });
   } catch (e) {
     return NextResponse.json(

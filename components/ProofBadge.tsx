@@ -10,6 +10,12 @@ interface VerifyResult {
   merkleRootsAccount?: string;
   computeUnits?: number;
   error?: string;
+  score?: {
+    proven: boolean;
+    scoreline?: string;
+    participant1?: string;
+    participant2?: string;
+  };
 }
 
 export default function ProofBadge({ fixtureId }: { fixtureId: number }) {
@@ -44,7 +50,9 @@ export default function ProofBadge({ fixtureId }: { fixtureId: number }) {
             <p className="text-small font-semibold">Provably real</p>
             {state === "done" && result ? (
               <p className="truncate text-tiny text-default-400">
-                Verified. This match data matches Solana&apos;s public record.
+                {result.score?.proven
+                  ? `Verified. The ${result.score.scoreline} scoreline is proven on Solana, not just reported.`
+                  : "Verified. This match data matches Solana's public record."}
               </p>
             ) : state === "failed" ? (
               <p className="truncate text-tiny text-danger">
