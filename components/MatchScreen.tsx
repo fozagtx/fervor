@@ -129,7 +129,7 @@ export default function MatchScreen({ fixtureId }: { fixtureId: number }) {
                 <p className="text-medium font-semibold">Win probability</p>
               </div>
               <p className="text-tiny text-default-400">
-                What the betting market believes, updated live from TxLINE consensus odds
+                What the betting world believes right now. It moves as the game does.
               </p>
             </CardHeader>
             <CardBody className="px-2 pb-3 pt-2 sm:px-4">

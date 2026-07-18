@@ -1,101 +1,158 @@
 "use client";
 
-import { Card, CardBody, Skeleton } from "@heroui/react";
+import { Button, Card, CardBody, Chip } from "@heroui/react";
 import { Icon } from "@iconify/react";
+import Link from "next/link";
 import TopBar from "@/components/TopBar";
 import MatchCard from "@/components/MatchCard";
 import { useMatchStream } from "@/lib/useMatchStream";
 import type { MatchState } from "@/lib/txline/types";
 
-function bucket(m: MatchState): "live" | "upcoming" | "finished" {
+function isLive(m: MatchState): boolean {
   const g = m.gameState.toLowerCase();
-  if (/(ft|full|final|ended|finish)/.test(g)) return "finished";
-  if (/(sched|not|pre)/.test(g) && m.probs.length === 0) return "upcoming";
-  if (/(sched|not|pre)/.test(g)) return "upcoming";
-  return "live";
+  return !/(sched|await|ft|full|final|ended|finish)/.test(g) && m.probs.length > 0;
 }
 
-export default function Home() {
-  const { matches, connected } = useMatchStream();
+export default function Landing() {
+  const { matches } = useMatchStream();
   const all = [...matches.values()];
-  const live = all.filter((m) => bucket(m) === "live");
-  const upcoming = all
-    .filter((m) => bucket(m) === "upcoming")
-    .sort((a, b) => a.startTime - b.startTime);
-  const finished = all
-    .filter((m) => bucket(m) === "finished")
-    .sort((a, b) => b.startTime - a.startTime);
+  const live = all.filter(isLive);
+  const upNext = all
+    .filter((m) => !isLive(m) && /sched/.test(m.gameState.toLowerCase()))
+    .sort((a, b) => a.startTime - b.startTime)
+    .slice(0, 2);
+  const featured = live.length > 0 ? live.slice(0, 2) : upNext;
+  const recent = all
+    .filter((m) => /(ft|full|final|ended|finish)/.test(m.gameState.toLowerCase()))
+    .sort((a, b) => b.startTime - a.startTime)[0];
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-6 sm:px-6 sm:py-10">
+    <main className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-4 py-6 sm:px-6 sm:py-10">
       <TopBar live={live.length > 0} />
 
-      <div className="flex flex-col gap-1 px-1">
-        <h1 className="text-2xl font-semibold tracking-tight">
-          Every match has a heartbeat.
-        </h1>
-        <p className="text-small text-default-400">
-          Live win probability from real betting-market consensus. Watch it move as the game does.
-        </p>
-      </div>
-
-      {!connected && all.length === 0 && (
+      <section className="flex flex-col gap-4 px-1 pt-4 sm:pt-8">
         <div className="flex flex-col gap-3">
-          {[0, 1, 2].map((i) => (
-            <Card key={i} shadow="sm" className="border-small border-default-200">
-              <CardBody className="gap-3 p-4">
-                <Skeleton className="h-5 w-3/5 rounded-medium" />
-                <Skeleton className="h-2 w-full rounded-full" />
-              </CardBody>
-            </Card>
-          ))}
+          <Chip size="sm" variant="flat" color="primary" className="w-fit">
+            World Cup 2026
+          </Chip>
+          <h1 className="text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
+            Every match has a heartbeat.
+          </h1>
+          <p className="max-w-lg text-medium text-default-500">
+            See the World Cup the way the bookmakers do: live win chances that
+            move with every goal, red card and momentum swing. Feel the game.
+            Call the swings. Relive the drama.
+          </p>
         </div>
-      )}
+        <div className="flex flex-wrap items-center gap-3 pt-1">
+          <Button
+            as={Link}
+            href="/matches"
+            color="primary"
+            radius="full"
+            size="lg"
+            startContent={<Icon icon="solar:play-bold" width={19} />}
+          >
+            Open the live lobby
+          </Button>
+          {recent && (
+            <Button
+              as={Link}
+              href={`/match/${recent.fixtureId}`}
+              radius="full"
+              size="lg"
+              variant="bordered"
+              className="border-default-300"
+              startContent={<Icon icon="solar:rewind-back-bold" width={18} />}
+            >
+              Replay {recent.home} vs {recent.away}
+            </Button>
+          )}
+        </div>
+      </section>
 
-      {live.length > 0 && (
+      {featured.length > 0 && (
         <section className="flex flex-col gap-3">
-          <SectionTitle icon="solar:play-stream-bold-duotone" title="Live now" accent />
-          {live.map((m) => (
+          <div className="flex items-center gap-2 px-1">
+            <Icon
+              icon={live.length > 0 ? "solar:play-stream-bold-duotone" : "solar:calendar-bold-duotone"}
+              width={18}
+              className={live.length > 0 ? "text-primary" : "text-default-400"}
+            />
+            <h2 className="text-small font-semibold uppercase tracking-wide text-default-500">
+              {live.length > 0 ? "Live right now" : "Up next"}
+            </h2>
+          </div>
+          {featured.map((m) => (
             <MatchCard key={m.fixtureId} match={m} />
           ))}
         </section>
       )}
 
-      {upcoming.length > 0 && (
-        <section className="flex flex-col gap-3">
-          <SectionTitle icon="solar:calendar-bold-duotone" title="Upcoming" />
-          {upcoming.slice(0, 8).map((m) => (
-            <MatchCard key={m.fixtureId} match={m} />
-          ))}
-        </section>
-      )}
+      <section className="grid gap-3 sm:grid-cols-3">
+        <FeatureCard
+          icon="solar:heart-pulse-bold-duotone"
+          color="text-primary"
+          wrapper="border-primary-100 bg-primary-50"
+          title="The wave"
+          text="Win chances update every few seconds. When a goal hits, you watch the whole market flinch."
+        />
+        <FeatureCard
+          icon="solar:cup-star-bold-duotone"
+          color="text-warning"
+          wrapper="border-warning-100 bg-warning-50"
+          title="Pulse calls"
+          text="Higher or lower in five minutes? Outsmart the bookies, build a streak. Free, no sign-up."
+        />
+        <FeatureCard
+          icon="solar:rewind-back-bold-duotone"
+          color="text-secondary"
+          wrapper="border-secondary-100 bg-secondary-50"
+          title="Relive the drama"
+          text="Any finished match replays like it is live. Watch the semi-final swing at 60x speed."
+        />
+      </section>
 
-      {finished.length > 0 && (
-        <section className="flex flex-col gap-3">
-          <SectionTitle icon="solar:flag-2-bold-duotone" title="Recent · tap to replay" />
-          {finished.slice(0, 10).map((m) => (
-            <MatchCard key={m.fixtureId} match={m} />
-          ))}
-        </section>
-      )}
-
-      {connected && all.length === 0 && (
-        <Card shadow="none" className="border-small border-dashed border-default-200">
-          <CardBody className="items-center gap-2 py-10">
-            <Icon icon="solar:football-bold-duotone" className="text-default-300" width={34} />
-            <p className="text-small text-default-400">No fixtures available right now</p>
-          </CardBody>
-        </Card>
-      )}
+      <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 pb-2 text-center text-tiny text-default-400">
+        <span>Free to play</span>
+        <span>·</span>
+        <span>No sign-up</span>
+        <span>·</span>
+        <span>Every score checkable on Solana</span>
+        <span>·</span>
+        <span className="flex items-center gap-1">
+          <Icon icon="solar:bolt-linear" width={12} />
+          Powered by TxLINE
+        </span>
+      </div>
     </main>
   );
 }
 
-function SectionTitle({ icon, title, accent }: { icon: string; title: string; accent?: boolean }) {
+function FeatureCard({
+  icon,
+  color,
+  wrapper,
+  title,
+  text,
+}: {
+  icon: string;
+  color: string;
+  wrapper: string;
+  title: string;
+  text: string;
+}) {
   return (
-    <div className="flex items-center gap-2 px-1">
-      <Icon icon={icon} width={18} className={accent ? "text-primary" : "text-default-400"} />
-      <h2 className="text-small font-semibold uppercase tracking-wide text-default-500">{title}</h2>
-    </div>
+    <Card shadow="sm" className="border-small border-default-200">
+      <CardBody className="flex h-full flex-row items-start gap-3 p-4 sm:flex-col">
+        <div className={`flex items-center justify-center rounded-medium border p-2 ${wrapper}`}>
+          <Icon icon={icon} className={color} width={24} />
+        </div>
+        <div className="flex flex-col gap-0.5">
+          <p className="text-medium font-semibold">{title}</p>
+          <p className="text-small text-default-500">{text}</p>
+        </div>
+      </CardBody>
+    </Card>
   );
 }

@@ -3,6 +3,7 @@
 import { Chip } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import Link from "next/link";
+import ThemeToggle from "./ThemeToggle";
 
 export default function TopBar({ live }: { live?: boolean }) {
   return (
@@ -16,7 +17,7 @@ export default function TopBar({ live }: { live?: boolean }) {
           <p className="text-tiny text-default-400 leading-tight">World Cup, second by second</p>
         </div>
       </Link>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5">
         {live && (
           <Chip
             size="sm"
@@ -27,12 +28,13 @@ export default function TopBar({ live }: { live?: boolean }) {
             LIVE
           </Chip>
         )}
-        <Chip size="sm" variant="bordered" className="border-default-300 text-default-500">
+        <Chip size="sm" variant="bordered" className="hidden border-default-300 text-default-500 sm:flex">
           <span className="flex items-center gap-1">
             <Icon icon="solar:bolt-linear" width={13} />
             TxLINE
           </span>
         </Chip>
+        <ThemeToggle />
       </div>
     </div>
   );

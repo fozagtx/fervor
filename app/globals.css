@@ -6,15 +6,36 @@
 :root {
   --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+  --chart-grid: #e4e4e7;
+  --chart-marker-bg: #ffffff;
+  --chart-draw-label: #71717a;
+}
+
+.dark {
+  --chart-grid: #27272a;
+  --chart-marker-bg: #121215;
+  --chart-draw-label: #a1a1aa;
 }
 
 html {
   font-family: var(--font-sans);
+  background: #f4f4f5;
+}
+
+html.dark {
   background: #09090b;
 }
 
 body {
   min-height: 100dvh;
+  background:
+    radial-gradient(60rem 40rem at 85% -10%, rgba(15, 138, 82, 0.06), transparent 60%),
+    radial-gradient(50rem 35rem at -10% 110%, rgba(85, 102, 241, 0.05), transparent 60%),
+    #f4f4f5;
+  color: #18181b;
+}
+
+.dark body {
   background:
     radial-gradient(60rem 40rem at 85% -10%, rgba(16, 185, 129, 0.07), transparent 60%),
     radial-gradient(50rem 35rem at -10% 110%, rgba(129, 140, 248, 0.05), transparent 60%),

@@ -44,16 +44,15 @@ export default function ProofBadge({ fixtureId }: { fixtureId: number }) {
             <p className="text-small font-semibold">Provably real</p>
             {state === "done" && result ? (
               <p className="truncate text-tiny text-default-400">
-                Merkle proof verified against the TxOracle program on Solana devnet
-                {result.computeUnits ? ` · ${result.computeUnits.toLocaleString()} CU` : ""}
+                Verified. This match data matches Solana&apos;s public record.
               </p>
             ) : state === "failed" ? (
               <p className="truncate text-tiny text-danger">
-                Verification unavailable for this fixture right now
+                Could not verify right now. Try again in a moment.
               </p>
             ) : (
               <p className="truncate text-tiny text-default-400">
-                Check this match data against its on-chain Merkle root
+                Check this match against Solana&apos;s public record
               </p>
             )}
           </div>
@@ -69,7 +68,7 @@ export default function ProofBadge({ fixtureId }: { fixtureId: number }) {
             className="border-default-300"
             startContent={<Icon icon="solar:link-linear" width={14} />}
           >
-            View program
+            See the record
           </Button>
         ) : (
           <Button

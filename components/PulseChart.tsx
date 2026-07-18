@@ -116,7 +116,7 @@ export default function PulseChart({ probs, events, home, away }: Props) {
     <div className="relative flex w-full select-none flex-col gap-2">
       <div className="grid grid-cols-3 items-end px-2">
         <Stat name={home} pct={shown.home} color={COLORS.home} align="left" />
-        <Stat name="Draw" pct={shown.draw} color="#A1A1AA" align="center" />
+        <Stat name="Draw" pct={shown.draw} color="var(--chart-draw-label)" align="center" />
         <Stat name={away} pct={shown.away} color={COLORS.away} align="right" />
       </div>
       <svg
@@ -144,7 +144,7 @@ export default function PulseChart({ probs, events, home, away }: Props) {
             x2={W - PAD_RIGHT}
             y1={model.y(g)}
             y2={model.y(g)}
-            stroke="#27272A"
+            stroke="var(--chart-grid)"
             strokeDasharray="3 5"
             strokeWidth="1"
           />
@@ -159,7 +159,7 @@ export default function PulseChart({ probs, events, home, away }: Props) {
         {markers.map(({ e, x }) => (
           <g key={e.id}>
             <line x1={x} x2={x} y1={model.ceil} y2={model.floor} stroke={markerColor(e)} strokeOpacity="0.45" strokeWidth="1.2" />
-            <circle cx={x} cy={model.ceil + 7} r="6.5" fill="#121215" stroke={markerColor(e)} strokeWidth="1.4" />
+            <circle cx={x} cy={model.ceil + 7} r="6.5" fill="var(--chart-marker-bg)" stroke={markerColor(e)} strokeWidth="1.4" />
             <text x={x} y={model.ceil + 10.5} textAnchor="middle" fontSize="9" fill={markerColor(e)}>
               {markerGlyph(e)}
             </text>
