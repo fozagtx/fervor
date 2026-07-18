@@ -34,20 +34,33 @@ body {
   color: #18181b;
 }
 
-/* /mini — white, tight, no forced full-viewport stretch */
+/* /mini popup — tight white page, kill empty viewport + stray chrome */
+html[data-torq-mini-root],
 html:has([data-torq-mini]),
+body[data-torq-mini-root],
 body:has([data-torq-mini]) {
   margin: 0 !important;
+  padding: 0 !important;
   min-height: 0 !important;
   height: auto !important;
+  max-height: none !important;
   overflow: hidden !important;
   background: #ffffff !important;
   color: #18181b !important;
-  color-scheme: light;
+  color-scheme: light !important;
 }
 
+body[data-torq-mini-root] [data-overlay-container],
 body:has([data-torq-mini]) [data-overlay-container] {
-  height: auto;
+  display: contents;
+}
+
+/* Hide Next / tooling floating badges on mini */
+body[data-torq-mini-root] nextjs-portal,
+body:has([data-torq-mini]) nextjs-portal,
+body[data-torq-mini-root] [data-nextjs-toast],
+body:has([data-torq-mini]) [data-nextjs-toast] {
+  display: none !important;
 }
 
 .dark body {
