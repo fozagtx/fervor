@@ -17,7 +17,7 @@ X / Tweet fields omitted (none). Demo video URL still TBD (you record).
 | Live MVP | https://fervor.up.railway.app |
 | Demo Video | _TBD — your Loom/YouTube_ |
 | Repository | https://github.com/fozagtx/fervor |
-| Technical Documentation | https://github.com/fozagtx/fervor/blob/main/README.md · this file |
+| Technical Documentation | https://github.com/fozagtx/fervor/blob/main/README.md · [TxLINE notes](txline.md) · this file |
 
 **Briefly explain your Project**
 
@@ -25,9 +25,9 @@ Torq is a World Cup second-screen app for fans with a phone in hand. It turns Tx
 
 **Originality for judges:** First second-screen that combines consensus odds Drama Score + a playable mini-game + verifiable outcomes without requiring betting.
 
-**Anything Else?** macOS island (`macos/`), embed `/embed/[id]`, watch links `/watch/[id]`, PWA install, demo script `claudedocs/demo-script.md`, live smoke `pnpm smoke`.
+**TxLINE experience:** paste from [`docs/txline.md`](txline.md) → *API feedback*.
 
-Same block lives in the root [README](../README.md#world-cup-track-submission).
+**Anything Else?** macOS island (`macos/`), embed `/embed/[id]`, watch links `/watch/[id]`, PWA install, demo script `claudedocs/demo-script.md`, live smoke `pnpm smoke`.
 
 ## Core idea
 
@@ -63,32 +63,6 @@ Most fans watch with a phone in their hand. The one thing the big operators alwa
 2. **B2B embeddable widget** — the win-probability river as an embed for publishers and streamers (`/embed/[fixture]`), licensed per-seat; a natural downstream distribution channel for TxLINE data.
 3. **Sponsorships** — moment cards ("Goal alert presented by …") in high-attention contexts.
 
-## TxLINE endpoints used
+## TxLINE
 
-- `POST /auth/guest/start`
-- `POST /api/token/activate`
-- `GET /api/fixtures/snapshot?competitionId=72&startEpochDay=…`
-- `GET /api/odds/stream` (SSE)
-- `GET /api/scores/stream` (SSE)
-- `GET /api/odds/snapshot/{fixtureId}?asOf=…`
-- `GET /api/scores/historical/{fixtureId}`
-- `GET /api/odds/updates/{epochDay}/{hourOfDay}/{interval}`
-- `GET /api/fixtures/validation` + on-chain `validateFixture` (view simulation)
-- `GET /api/scores/stat-validation` + on-chain `validateStatV2` (view simulation)
-
-## API feedback
-
-What we liked most:
-
-- **The `Pct` field is a gift.** Demargined percentages per price name means a consumer win-probability product needs zero odds math. This is the single best property of the feed.
-- Free tier with a real on-chain subscription flow was smooth end to end; guest JWT + activation worked exactly as documented.
-- No rate limiting made the historical odds backfill (dozens of interval pages per match) painless.
-- The runnable devnet examples repo saved hours; auth was working within the first hour because of it.
-
-Where we hit friction:
-
-- **Spec vs. feed casing:** the OpenAPI spec documents scores fields in camelCase (`fixtureId`, `gameState`, `scoreSoccer`) but the live feed and historical endpoint emit PascalCase (`FixtureId`, `GameState`, `Score`). Cost us a rewrite of the normalizer.
-- **Top-level `GameState` on scores messages never changes** (stayed "scheduled" through an entire finished match). The real state lives in `StatusId`. Documenting the StatusId enum (2=1st half, 3=HT, 4=2nd half, 5/100=ended…) would help a lot.
-- **Period sub-markets are flagged inconsistently:** "half=1" appears in `MarketParameters` on the live odds stream but in `MarketPeriod` in the interval archive. Filtering full-match 1X2 requires checking both.
-- `/api/token/activate` returns `text/plain` while most of the API is JSON; easy to mis-parse.
-- `/scores/historical/{fixtureId}` responds with SSE-style `data:` framing on a plain GET; a JSON array (or documenting the framing) would be friendlier.
+Full endpoint list + Earn API feedback → [`docs/txline.md`](txline.md)
