@@ -4,6 +4,7 @@ import { Button, Card, CardBody, Chip } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import Link from "next/link";
 import FeedFab from "@/components/FeedFab";
+import InstallButton from "@/components/InstallButton";
 import Mascot from "@/components/Mascot";
 import TopBar from "@/components/TopBar";
 import MatchCard from "@/components/MatchCard";
@@ -76,6 +77,7 @@ export default function Landing() {
               Replay {recent.home} vs {recent.away}
             </Button>
           )}
+          <InstallButton />
         </div>
       </section>
 

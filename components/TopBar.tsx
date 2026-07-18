@@ -5,6 +5,7 @@ import { Icon } from "@iconify/react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import Logo from "./Logo";
+import MuteButton from "./MuteButton";
 import ThemeToggle from "./ThemeToggle";
 import WalletButton from "./WalletButton";
 
@@ -58,6 +59,7 @@ export default function TopBar({
           </span>
         </Chip>
         <WalletButton />
+        <MuteButton />
         <ThemeToggle />
       </div>
     </div>

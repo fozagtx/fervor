@@ -8,6 +8,8 @@ import TopBar from "@/components/TopBar";
 import ScoreHeader from "@/components/ScoreHeader";
 import PulseChart from "@/components/PulseChart";
 import EventTicker from "@/components/EventTicker";
+import GoalBlast from "@/components/GoalBlast";
+import SoundToggle from "@/components/SoundToggle";
 import PredictCard from "@/components/PredictCard";
 import ProofBadge from "@/components/ProofBadge";
 import RecapCard from "@/components/RecapCard";
@@ -117,6 +119,8 @@ export default function MatchScreen({ fixtureId }: { fixtureId: number }) {
               Mini scoreboard
             </Button>
           </div>
+
+          <GoalBlast match={match} active={isLive || replay} />
 
           <ScoreHeader match={match} replay={replay} />
 
@@ -231,7 +235,10 @@ export default function MatchScreen({ fixtureId }: { fixtureId: number }) {
                   Match moments
                 </h2>
               </div>
-              <PunditToggle enabled={pundit} onChange={setPundit} />
+              <div className="flex items-center gap-1.5">
+                <SoundToggle />
+                <PunditToggle enabled={pundit} onChange={setPundit} />
+              </div>
             </div>
             <PunditCaption match={match} enabled={pundit} />
             <EventTicker events={match.events} />

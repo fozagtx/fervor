@@ -67,3 +67,63 @@ header.writeUInt32LE(data.length, 40);
 fs.writeFileSync("macos/assets/goal.wav", Buffer.concat([header, data]));
 fs.copyFileSync("macos/assets/goal.wav", "public/goal.wav");
 console.log("made goal.wav (8-bit style chime)");
+
+// Crowd roar: shaped noise swell that reads as a stadium "yaaay" (~2s)
+{
+  const rate = 44100;
+  const dur = 2.0;
+  const n = Math.floor(rate * dur);
+  const out = new Float32Array(n);
+  let lp1 = 0, lp2 = 0;
+  for (let i = 0; i < n; i++) {
+    const t = i / n;
+    // envelope: fast swell, slow decay
+    const env = Math.min(1, t / 0.12) * Math.pow(1 - t, 0.6);
+    // brown-ish noise (two cascaded low passes) + a mid "voice" band wobble
+    const white = Math.random() * 2 - 1;
+    lp1 += 0.18 * (white - lp1);
+    lp2 += 0.28 * (lp1 - lp2);
+    const wobble = 1 + 0.35 * Math.sin(2 * Math.PI * 3.2 * t * dur) * Math.sin(2 * Math.PI * 0.7 * t * dur);
+    out[i] = lp2 * 2.6 * env * wobble;
+  }
+  const data = Buffer.alloc(n * 2);
+  out.forEach((v, i) => data.writeInt16LE(Math.round(Math.max(-1, Math.min(1, v)) * 30000), i * 2));
+  const header = Buffer.alloc(44);
+  header.write("RIFF", 0); header.writeUInt32LE(36 + data.length, 4); header.write("WAVE", 8);
+  header.write("fmt ", 12); header.writeUInt32LE(16, 16); header.writeUInt16LE(1, 20);
+  header.writeUInt16LE(1, 22); header.writeUInt32LE(rate, 24); header.writeUInt32LE(rate * 2, 28);
+  header.writeUInt16LE(2, 32); header.writeUInt16LE(16, 34); header.write("data", 36);
+  header.writeUInt32LE(data.length, 40);
+  fs.writeFileSync("public/crowd.wav", Buffer.concat([header, data]));
+  console.log("made crowd.wav (stadium roar)");
+}
+
+// Referee whistle: two square-wave blasts with vibrato
+{
+  const rate = 44100;
+  const blast = (len, freq) => {
+    const n = Math.floor(rate * len);
+    const arr = new Float32Array(n);
+    for (let i = 0; i < n; i++) {
+      const t = i / rate;
+      const f = freq + 60 * Math.sin(2 * Math.PI * 38 * t);
+      const env = Math.min(1, i / (rate * 0.01)) * Math.min(1, (n - i) / (rate * 0.03));
+      arr[i] = Math.sign(Math.sin(2 * Math.PI * f * t)) * 0.16 * env;
+    }
+    return arr;
+  };
+  const gap = new Float32Array(Math.floor(rate * 0.07));
+  const parts = [blast(0.22, 2350), gap, blast(0.3, 2350)];
+  const total = parts.reduce((s, p) => s + p.length, 0);
+  const data = Buffer.alloc(total * 2);
+  let off = 0;
+  for (const p of parts) { p.forEach((v, i) => data.writeInt16LE(Math.round(v * 32767), (off + i) * 2)); off += p.length; }
+  const header = Buffer.alloc(44);
+  header.write("RIFF", 0); header.writeUInt32LE(36 + data.length, 4); header.write("WAVE", 8);
+  header.write("fmt ", 12); header.writeUInt32LE(16, 16); header.writeUInt16LE(1, 20);
+  header.writeUInt16LE(1, 22); header.writeUInt32LE(rate, 24); header.writeUInt32LE(rate * 2, 28);
+  header.writeUInt16LE(2, 32); header.writeUInt16LE(16, 34); header.write("data", 36);
+  header.writeUInt32LE(data.length, 40);
+  fs.writeFileSync("public/whistle.wav", Buffer.concat([header, data]));
+  console.log("made whistle.wav");
+}

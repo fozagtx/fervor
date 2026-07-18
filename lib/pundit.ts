@@ -1,3 +1,4 @@
+import { soundEnabled } from "@/lib/sound";
 import type { MatchEvent, MatchState } from "@/lib/txline/types";
 
 /**
@@ -63,6 +64,7 @@ function pickVoice(): SpeechSynthesisVoice | null {
 
 export function speak(line: string) {
   if (typeof window === "undefined" || !window.speechSynthesis) return;
+  if (!soundEnabled()) return;
   const utterance = new SpeechSynthesisUtterance(line);
   const voice = pickVoice();
   if (voice) utterance.voice = voice;
