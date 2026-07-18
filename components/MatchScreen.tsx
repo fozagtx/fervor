@@ -8,6 +8,7 @@ import ScoreHeader from "@/components/ScoreHeader";
 import PulseChart from "@/components/PulseChart";
 import EventTicker from "@/components/EventTicker";
 import PredictCard from "@/components/PredictCard";
+import { PunditCaption, PunditToggle } from "@/components/PunditVoice";
 import { useMatchStream } from "@/lib/useMatchStream";
 
 const SPEEDS = [10, 30, 60];
@@ -15,6 +16,7 @@ const SPEEDS = [10, 30, 60];
 export default function MatchScreen({ fixtureId }: { fixtureId: number }) {
   const [replay, setReplay] = useState(false);
   const [speed, setSpeed] = useState(30);
+  const [pundit, setPundit] = useState(false);
   const { matches, connected, replayDone } = useMatchStream({ fixtureId, replay, speed });
   const match = matches.get(fixtureId);
 
@@ -141,12 +143,16 @@ export default function MatchScreen({ fixtureId }: { fixtureId: number }) {
           {(replay || !finished) && match.probs.length > 0 && <PredictCard match={match} />}
 
           <section className="flex flex-col gap-3">
-            <div className="flex items-center gap-2 px-1">
-              <Icon icon="solar:soundwave-bold-duotone" width={18} className="text-default-400" />
-              <h2 className="text-small font-semibold uppercase tracking-wide text-default-500">
-                Match moments
-              </h2>
+            <div className="flex items-center justify-between px-1">
+              <div className="flex items-center gap-2">
+                <Icon icon="solar:soundwave-bold-duotone" width={18} className="text-default-400" />
+                <h2 className="text-small font-semibold uppercase tracking-wide text-default-500">
+                  Match moments
+                </h2>
+              </div>
+              <PunditToggle enabled={pundit} onChange={setPundit} />
             </div>
+            <PunditCaption match={match} enabled={pundit} />
             <EventTicker events={match.events} />
           </section>
         </>
