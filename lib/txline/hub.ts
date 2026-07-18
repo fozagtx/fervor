@@ -5,6 +5,7 @@ import { API_BASE, NETWORK, RECORDINGS_DIR, WORLD_CUP_COMPETITION_ID } from "./c
 import { getAuth, renewJwt } from "./auth";
 import { txGet } from "./api";
 import { applyScores, fixtureToMatch, isEndedStatus, isInPlay, makeEvent, oddsToProbPoint } from "./normalize";
+import resultsSeed from "./results-seed.json";
 import type {
   MatchState,
   ProbPoint,
@@ -43,6 +44,7 @@ class MatchHub {
       await this.openStream("scores");
       setInterval(() => this.broadcast({ type: "heartbeat", ts: Date.now() }), 25000);
       setInterval(() => this.loadFixtures().catch(() => {}), 10 * 60 * 1000);
+      setInterval(() => this.watchdog(), 60 * 1000);
       console.log(`[hub] started on ${NETWORK}: ${this.matches.size} fixtures`);
       void this.warmReplays();
     } catch (e) {
@@ -138,11 +140,40 @@ class MatchHub {
         this.matches.set(f.FixtureId, fixtureToMatch(f));
       }
     }
+    this.applyResultsSeed();
   }
+
+  /**
+   * Known final results ship inside the bundle so a cold boot (fresh disk)
+   * shows correct scores immediately, before the replay warm-up refreshes.
+   */
+  private applyResultsSeed() {
+    for (const [fixtureId, result] of Object.entries(
+      resultsSeed as Record<
+        string,
+        { scoreHome: number; scoreAway: number; gameState: string; statusId?: number; minute?: number }
+      >
+    )) {
+      const match = this.matches.get(Number(fixtureId));
+      if (!match || match.statusId !== undefined) continue;
+      Object.assign(match, result);
+    }
+  }
+
+  private streams = new Map<string, { es: EventSource; lastMessageAt: number }>();
 
   private async openStream(kind: "odds" | "scores") {
     const { apiToken } = await getAuth();
     const url = `${API_BASE}/${kind}/stream`;
+
+    const existing = this.streams.get(kind);
+    if (existing) {
+      try {
+        existing.es.close();
+      } catch {
+        // already closed
+      }
+    }
 
     const es = new EventSource(url, {
       fetch: async (input, init) => {
@@ -166,12 +197,16 @@ class MatchHub {
       },
     });
 
+    const entry = { es, lastMessageAt: Date.now() };
+    this.streams.set(kind, entry);
+
     es.onopen = () => console.log(`[hub] ${kind} stream open`);
     es.onerror = (err) => {
       this.lastError = `${kind} stream error: ${JSON.stringify(err)}`;
       console.error(`[hub] ${kind} stream error`, err);
     };
     es.onmessage = (ev) => {
+      entry.lastMessageAt = Date.now();
       try {
         const data = JSON.parse(ev.data);
         this.record(kind, data);
@@ -181,6 +216,23 @@ class MatchHub {
         console.error(`[hub] bad ${kind} payload`, e, String(ev.data).slice(0, 300));
       }
     };
+  }
+
+  /**
+   * The upstream feed can drop a connection without an error event. If a
+   * stream has been silent for too long, tear it down and reconnect.
+   */
+  private watchdog() {
+    const SILENT_LIMIT = 4 * 60 * 1000;
+    for (const [kind, entry] of this.streams) {
+      if (Date.now() - entry.lastMessageAt > SILENT_LIMIT) {
+        console.log(`[hub] ${kind} stream silent for 4m; reconnecting`);
+        this.openStream(kind as "odds" | "scores").catch((e) =>
+          console.error(`[hub] ${kind} reconnect failed:`, e)
+        );
+        entry.lastMessageAt = Date.now(); // avoid thrashing while reconnecting
+      }
+    }
   }
 
   onOdds(odds: TxOddsPayload) {

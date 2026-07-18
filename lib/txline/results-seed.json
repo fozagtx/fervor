@@ -1,0 +1,100 @@
+{
+ "18185036": {
+  "scoreHome": 0,
+  "scoreAway": 3,
+  "gameState": "Full Time",
+  "statusId": 100,
+  "minute": 0
+ },
+ "18188721": {
+  "scoreHome": 0,
+  "scoreAway": 1,
+  "gameState": "Full Time",
+  "statusId": 100,
+  "minute": 0
+ },
+ "18187298": {
+  "scoreHome": 1,
+  "scoreAway": 2,
+  "gameState": "Full Time",
+  "statusId": 100,
+  "minute": 0
+ },
+ "18192996": {
+  "scoreHome": 2,
+  "scoreAway": 3,
+  "gameState": "Full Time",
+  "statusId": 100,
+  "minute": 0
+ },
+ "18198205": {
+  "scoreHome": 0,
+  "scoreAway": 1,
+  "gameState": "Full Time",
+  "statusId": 100,
+  "minute": 0
+ },
+ "18193785": {
+  "scoreHome": 1,
+  "scoreAway": 4,
+  "gameState": "Full Time",
+  "statusId": 100,
+  "minute": 0
+ },
+ "18202701": {
+  "scoreHome": 3,
+  "scoreAway": 2,
+  "gameState": "Full Time",
+  "statusId": 100,
+  "minute": 0
+ },
+ "18202783": {
+  "scoreHome": 0,
+  "scoreAway": 0,
+  "gameState": "Full Time",
+  "statusId": 100,
+  "minute": 0
+ },
+ "18209181": {
+  "scoreHome": 2,
+  "scoreAway": 0,
+  "gameState": "Full Time",
+  "statusId": 100,
+  "minute": 0
+ },
+ "18218149": {
+  "scoreHome": 2,
+  "scoreAway": 1,
+  "gameState": "Full Time",
+  "statusId": 100,
+  "minute": 0
+ },
+ "18213979": {
+  "scoreHome": 1,
+  "scoreAway": 2,
+  "gameState": "Full Time",
+  "statusId": 100,
+  "minute": 0
+ },
+ "18222446": {
+  "scoreHome": 3,
+  "scoreAway": 1,
+  "gameState": "Full Time",
+  "statusId": 100,
+  "minute": 0
+ },
+ "18237038": {
+  "scoreHome": 0,
+  "scoreAway": 2,
+  "gameState": "Full Time",
+  "statusId": 100,
+  "minute": 0
+ },
+ "18241006": {
+  "scoreHome": 1,
+  "scoreAway": 2,
+  "gameState": "Full Time",
+  "statusId": 100,
+  "minute": 0
+ }
+}
