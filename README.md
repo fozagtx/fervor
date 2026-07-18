@@ -69,7 +69,6 @@ pnpm bootstrap   # one-shot: subscribe → activate → verify streams
 pnpm dev
 ```
 
-`TXLINE_SIM=1 pnpm dev` runs a self-contained simulator (no credentials needed) for UI development.
 
 ## Judging after the tournament
 

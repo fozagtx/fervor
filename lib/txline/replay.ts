@@ -171,79 +171,11 @@ async function backfillTimeline(fixtureId: number, startTime: number): Promise<T
   return items;
 }
 
-/** Dev fallback: synthesize a real-shaped timeline (sim mode only). */
-function synthesizeTimeline(fixtureId: number): TimelineItem[] {
-  const items: TimelineItem[] = [];
-  const start = Date.now() - 105 * 60000;
-  let h = 38;
-  let a = 34;
-  const goalMinutes = [23, 57, 78];
-  let g1 = 0;
-  let g2 = 0;
-  const score = () => ({
-    Participant1: { Total: { Goals: g1 } },
-    Participant2: { Total: { Goals: g2 } },
-  });
-  const scores = (min: number, action: string, statusId: number, extra: Partial<TxScores> = {}): TxScores => ({
-    FixtureId: fixtureId,
-    Action: action,
-    Ts: start + min * 60000,
-    StatusId: statusId,
-    Clock: { Running: true, Seconds: Math.floor(min * 60) },
-    Score: score(),
-    Confirmed: true,
-    ...extra,
-  });
-
-  items.push({ ts: start, kind: "scores", data: scores(0, "kickoff", 2) });
-  for (let min = 0; min <= 95; min += 0.5) {
-    const statusId = min < 45 ? 2 : min < 47 ? 3 : min < 94 ? 4 : 5;
-    if (goalMinutes.includes(min)) {
-      if (Math.random() < 0.55) g1 += 1;
-      else g2 += 1;
-      items.push({
-        ts: start + min * 60000,
-        kind: "scores",
-        data: scores(min, "goal", statusId, { Participant: g1 > g2 ? 1 : 2 }),
-      });
-    }
-    h += (Math.random() - 0.5) * 2;
-    a += (Math.random() - 0.5) * 2;
-    h = Math.max(5, Math.min(88, h));
-    a = Math.max(5, Math.min(88, a));
-    const d = Math.max(4, 100 - h - a);
-    const total = h + a + d;
-    items.push({
-      ts: start + min * 60000,
-      kind: "odds",
-      data: {
-        FixtureId: fixtureId,
-        MessageId: `sim-${min}`,
-        Ts: start + min * 60000,
-        Bookmaker: "TXLineStablePriceDemargined",
-        BookmakerId: 10021,
-        SuperOddsType: "1X2_PARTICIPANT_RESULT",
-        InRunning: true,
-        MarketParameters: null,
-        PriceNames: ["part1", "draw", "part2"],
-        Pct: [
-          ((h / total) * 100).toFixed(3),
-          ((d / total) * 100).toFixed(3),
-          ((a / total) * 100).toFixed(3),
-        ],
-      } as TxOddsPayload,
-    });
-  }
-  items.push({ ts: start + 96 * 60000, kind: "scores", data: scores(96, "game_finalised", 100) });
-  return items;
-}
-
 async function loadTimeline(fixtureId: number, startTime: number): Promise<TimelineItem[]> {
   let timeline = loadMaterialized(fixtureId);
   if (timeline.length > 20) return trimToMatch(timeline);
   timeline = loadRecordings(fixtureId);
   if (timeline.length > 20) return trimToMatch(timeline);
-  if (process.env.TXLINE_SIM === "1") return synthesizeTimeline(fixtureId);
   try {
     return trimToMatch(await backfillTimeline(fixtureId, startTime));
   } catch (e) {

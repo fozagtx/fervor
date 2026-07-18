@@ -33,11 +33,6 @@ class MatchHub {
   async start() {
     if (this.started) return;
     this.started = true;
-    if (process.env.TXLINE_SIM === "1") {
-      const { startSimulation } = await import("./sim");
-      startSimulation(this);
-      return;
-    }
     try {
       await this.loadFixtures();
       this.rehydrate();
@@ -54,49 +49,6 @@ class MatchHub {
       console.error("[hub] start failed:", e);
       setTimeout(() => this.start(), 30000);
     }
-  }
-
-  /** Simulator entry points (dev only) — reuse the exact live paths. */
-  onSimProb(fixtureId: number, point: ProbPoint) {
-    const match = this.matches.get(fixtureId);
-    if (!match) return;
-    match.probs.push(point);
-    if (match.probs.length > MAX_PROB_POINTS) match.probs.shift();
-    match.lastUpdate = Date.now();
-    this.broadcast({ type: "prob", fixtureId, point });
-    this.detectShift(match);
-  }
-
-  onSimScore(fixtureId: number, home: number, away: number, gameState: string, minute?: number) {
-    const match = this.matches.get(fixtureId);
-    if (!match) return;
-    const scored = home !== match.scoreHome || away !== match.scoreAway;
-    const side = home !== match.scoreHome ? "home" : "away";
-    match.scoreHome = home;
-    match.scoreAway = away;
-    match.gameState = gameState;
-    match.minute = minute;
-    if (scored) {
-      const team = side === "home" ? match.home : match.away;
-      const event = makeEvent({
-        fixtureId,
-        ts: Date.now(),
-        kind: "goal",
-        side,
-        minute,
-        label: `GOAL! ${team} score, ${home}–${away}`,
-      });
-      match.events.push(event);
-      this.broadcast({ type: "event", event });
-    }
-    this.broadcast({ type: "score", fixtureId, scoreHome: home, scoreAway: away, gameState, minute });
-  }
-
-  emitEvent(event: ReturnType<typeof makeEvent>) {
-    const match = this.matches.get(event.fixtureId);
-    if (!match) return;
-    match.events.push(event);
-    this.broadcast({ type: "event", event });
   }
 
   /**
@@ -259,7 +211,7 @@ class MatchHub {
   }
 
   private detectShift(match: MatchState) {
-    if (!isInPlay(match.statusId) && process.env.TXLINE_SIM !== "1") return;
+    if (!isInPlay(match.statusId)) return;
     const points = match.probs;
     const now = points[points.length - 1];
     if (!now) return;
