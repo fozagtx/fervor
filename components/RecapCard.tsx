@@ -4,27 +4,15 @@ import { Button, Card, CardBody, Chip } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import type { MatchState } from "@/lib/txline/types";
 import { biggestSwing, dramaPeak } from "@/lib/drama";
+import { loadStats } from "@/lib/stats";
+import { useWallet } from "@/lib/useWallet";
 import { COLORS } from "./PulseChart";
-
-interface CallStats {
-  wins: number;
-  plays: number;
-  points?: number;
-  best?: number;
-}
-
-function loadStats(): CallStats {
-  try {
-    return { wins: 0, plays: 0, ...JSON.parse(localStorage.getItem("matchpulse-market-stats") || "{}") };
-  } catch {
-    return { wins: 0, plays: 0 };
-  }
-}
 
 export default function RecapCard({ match }: { match: MatchState }) {
   const swing = biggestSwing(match.probs);
   const peak = dramaPeak(match);
-  const stats = loadStats();
+  const { address } = useWallet();
+  const stats = loadStats(address);
   const goals = match.events.filter((e) => e.kind === "goal").length;
 
   const share = async () => {

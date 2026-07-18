@@ -5,6 +5,7 @@ import { Icon } from "@iconify/react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import ThemeToggle from "./ThemeToggle";
+import WalletButton from "./WalletButton";
 
 export default function TopBar({
   live,
@@ -25,16 +26,16 @@ export default function TopBar({
   }, [connected]);
   return (
     <div className="flex items-center justify-between rounded-large border-small border-default-200 bg-content1 px-4 py-3 shadow-sm">
-      <Link href="/" className="flex items-center gap-3">
-        <div className="flex items-center justify-center rounded-medium border border-primary-100 bg-primary-50 p-2">
+      <Link href="/" className="flex min-w-0 flex-1 items-center gap-3">
+        <div className="flex shrink-0 items-center justify-center rounded-medium border border-primary-100 bg-primary-50 p-2">
           <Icon icon="solar:heart-pulse-bold-duotone" className="text-primary" width={22} />
         </div>
-        <div className="flex flex-col">
-          <p className="text-medium font-semibold leading-tight">Match Pulse</p>
-          <p className="text-tiny text-default-400 leading-tight">World Cup, second by second</p>
+        <div className="flex min-w-0 flex-col">
+          <p className="whitespace-nowrap text-medium font-semibold leading-tight">Match Pulse</p>
+          <p className="truncate text-tiny leading-tight text-default-400">World Cup, second by second</p>
         </div>
       </Link>
-      <div className="flex items-center gap-1.5">
+      <div className="flex shrink-0 items-center gap-1.5">
         {showOffline ? (
           <Chip size="sm" variant="flat" color="warning" className="font-mono">
             reconnecting…
@@ -57,6 +58,7 @@ export default function TopBar({
             TxLINE
           </span>
         </Chip>
+        <WalletButton />
         <ThemeToggle />
       </div>
     </div>

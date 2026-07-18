@@ -5,6 +5,8 @@ import { Icon } from "@iconify/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import type { MatchState, ProbPoint } from "@/lib/txline/types";
+import { adoptGuestStats, type CallStats, EMPTY_STATS, loadStats, saveStats } from "@/lib/stats";
+import { useWallet } from "@/lib/useWallet";
 import { COLORS } from "./PulseChart";
 
 const WINDOW_MS = 5 * 60 * 1000; // five minutes of match-feed time
@@ -16,32 +18,19 @@ interface Pick {
   startTs: number;
 }
 
-interface Stats {
-  streak: number;
-  best: number;
-  wins: number;
-  plays: number;
-  points: number;
-}
-
-const STATS_KEY = "matchpulse-market-stats";
-
-const EMPTY_STATS: Stats = { streak: 0, best: 0, wins: 0, plays: 0, points: 0 };
-
-function loadStats(): Stats {
-  if (typeof window === "undefined") return EMPTY_STATS;
-  try {
-    return { ...EMPTY_STATS, ...JSON.parse(localStorage.getItem(STATS_KEY) || "{}") };
-  } catch {
-    return EMPTY_STATS;
-  }
-}
+type Stats = CallStats;
 
 export default function PredictCard({ match }: { match: MatchState }) {
   const [side, setSide] = useState<"home" | "away">("home");
   const [pick, setPick] = useState<Pick | null>(null);
   const [result, setResult] = useState<{ won: boolean; from: number; to: number; pick: Pick; gained: number } | null>(null);
-  const [stats, setStats] = useState<Stats>(loadStats);
+  const { address } = useWallet();
+  const [stats, setStats] = useState<Stats>(EMPTY_STATS);
+
+  // Load the record for the current identity; adopt guest stats on connect
+  useEffect(() => {
+    setStats(address ? adoptGuestStats(address) : loadStats(null));
+  }, [address]);
 
   const latest = match.probs[match.probs.length - 1];
 
@@ -63,10 +52,10 @@ export default function PredictCard({ match }: { match: MatchState }) {
       points: stats.points + gained,
     };
     setStats(next);
-    localStorage.setItem(STATS_KEY, JSON.stringify(next));
+    saveStats(address, next);
     setResult({ won, from: pick.startProb, to: current, pick, gained });
     setPick(null);
-  }, [latest, pick, stats]);
+  }, [latest, pick, stats, address]);
 
   const progress = useMemo(() => {
     if (!pick || !latest) return 0;
