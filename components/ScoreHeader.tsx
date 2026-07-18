@@ -43,18 +43,24 @@ export default function ScoreHeader({ match, replay }: { match: MatchState; repl
             <span className="h-1.5 w-8 rounded-full" style={{ background: COLORS.home }} />
             <p className="text-large font-semibold leading-tight">{match.home}</p>
           </div>
-          <p className="px-2 font-mono text-4xl font-semibold tabular-nums">
-            {match.scoreHome}
-            <span className="px-1 text-default-300">–</span>
-            {match.scoreAway}
-          </p>
+          {live || finished || replay ? (
+            <p className="px-2 font-mono text-4xl font-semibold tabular-nums">
+              {match.scoreHome}
+              <span className="px-1 text-default-300">–</span>
+              {match.scoreAway}
+            </p>
+          ) : (
+            <p className="px-2 text-2xl font-medium text-default-400">vs</p>
+          )}
           <div className="flex flex-col items-end gap-1">
             <span className="h-1.5 w-8 rounded-full" style={{ background: COLORS.away }} />
             <p className="text-right text-large font-semibold leading-tight">{match.away}</p>
           </div>
         </div>
 
-        <p className="text-center text-tiny text-default-400">{match.gameState}</p>
+        <p className="text-center text-tiny capitalize text-default-400">
+          {live || finished ? match.gameState : replay ? "Replay" : "Awaiting kick-off"}
+        </p>
       </CardBody>
     </Card>
   );

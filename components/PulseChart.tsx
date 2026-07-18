@@ -213,10 +213,10 @@ function Stat({
   align: "left" | "center" | "right";
 }) {
   const alignCls =
-    align === "left" ? "items-start" : align === "right" ? "items-end" : "items-center";
+    align === "left" ? "items-start" : align === "right" ? "items-end text-right" : "items-center";
   return (
-    <div className={`flex flex-col ${alignCls}`}>
-      <p className="text-tiny font-medium uppercase tracking-wide" style={{ color }}>
+    <div className={`flex min-w-0 flex-col ${alignCls}`}>
+      <p className="w-full truncate text-tiny font-medium uppercase tracking-wide" style={{ color }}>
         {name}
       </p>
       <p className="font-mono text-2xl font-semibold tabular-nums leading-tight">

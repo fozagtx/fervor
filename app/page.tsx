@@ -35,7 +35,7 @@ export default function Home() {
           Every match has a heartbeat.
         </h1>
         <p className="text-small text-default-400">
-          Live win probability from real betting-market consensus — watch it move as the game does.
+          Live win probability from real betting-market consensus. Watch it move as the game does.
         </p>
       </div>
 
@@ -72,7 +72,7 @@ export default function Home() {
 
       {finished.length > 0 && (
         <section className="flex flex-col gap-3">
-          <SectionTitle icon="solar:flag-2-bold-duotone" title="Recent — tap to replay" />
+          <SectionTitle icon="solar:flag-2-bold-duotone" title="Recent · tap to replay" />
           {finished.slice(0, 10).map((m) => (
             <MatchCard key={m.fixtureId} match={m} />
           ))}

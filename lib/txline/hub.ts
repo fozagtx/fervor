@@ -69,22 +69,25 @@ class MatchHub {
   onSimScore(fixtureId: number, home: number, away: number, gameState: string, minute?: number) {
     const match = this.matches.get(fixtureId);
     if (!match) return;
+    const scored = home !== match.scoreHome || away !== match.scoreAway;
     const side = home !== match.scoreHome ? "home" : "away";
     match.scoreHome = home;
     match.scoreAway = away;
     match.gameState = gameState;
     match.minute = minute;
-    const team = side === "home" ? match.home : match.away;
-    const event = makeEvent({
-      fixtureId,
-      ts: Date.now(),
-      kind: "goal",
-      side,
-      minute,
-      label: `GOAL! ${team} score — ${home}–${away}`,
-    });
-    match.events.push(event);
-    this.broadcast({ type: "event", event });
+    if (scored) {
+      const team = side === "home" ? match.home : match.away;
+      const event = makeEvent({
+        fixtureId,
+        ts: Date.now(),
+        kind: "goal",
+        side,
+        minute,
+        label: `GOAL! ${team} score, ${home}–${away}`,
+      });
+      match.events.push(event);
+      this.broadcast({ type: "event", event });
+    }
     this.broadcast({ type: "score", fixtureId, scoreHome: home, scoreAway: away, gameState, minute });
   }
 
@@ -200,7 +203,7 @@ class MatchHub {
       kind: "shift",
       side,
       minute: match.minute,
-      label: `Market shift: ${team} ${dir} ${delta > 0 ? "+" : ""}${delta.toFixed(1)}pp`,
+      label: `Market shift: ${team} ${dir}`,
       delta: Math.round(delta * 10) / 10,
     });
     match.events.push(event);
@@ -230,7 +233,7 @@ class MatchHub {
         kind: "goal",
         side,
         minute: match.minute,
-        label: `GOAL! ${team} score — ${match.scoreHome}–${match.scoreAway}`,
+        label: `GOAL! ${team} score, ${match.scoreHome}–${match.scoreAway}`,
       });
       match.events.push(event);
       this.broadcast({ type: "event", event });

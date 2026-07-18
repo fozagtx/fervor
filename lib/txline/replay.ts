@@ -232,7 +232,7 @@ export function startReplay(
           kind: "goal",
           side,
           minute: match.minute,
-          label: `GOAL! ${team} score — ${match.scoreHome}–${match.scoreAway}`,
+          label: `GOAL! ${team} score, ${match.scoreHome}–${match.scoreAway}`,
         });
         match.events.push(event);
         send({ type: "event", event });
@@ -287,7 +287,7 @@ export function startReplay(
       kind: "shift",
       side,
       minute: match.minute,
-      label: `Market shift: ${team} ${delta > 0 ? "surging" : "sliding"} ${delta > 0 ? "+" : ""}${delta.toFixed(1)}pp`,
+      label: `Market shift: ${team} ${delta > 0 ? "surging" : "sliding"}`,
       delta: Math.round(delta * 10) / 10,
     });
     match.events.push(event);

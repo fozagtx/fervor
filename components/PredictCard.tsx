@@ -137,7 +137,7 @@ export default function PredictCard({ match }: { match: MatchState }) {
               </div>
               <Progress size="sm" value={progress} color="secondary" aria-label="time remaining in this call" />
               <p className="text-center text-tiny text-default-400">
-                Locked — settles after 5 minutes of match time
+                Locked · settles after 5 minutes of match time
               </p>
             </motion.div>
           ) : (
@@ -174,7 +174,7 @@ export default function PredictCard({ match }: { match: MatchState }) {
                     <button
                       key={s}
                       onClick={() => setSide(s)}
-                      className={`px-3 py-1.5 text-tiny font-medium transition-colors ${
+                      className={`max-w-32 truncate px-3 py-1.5 text-tiny font-medium transition-colors ${
                         side === s ? "bg-default-100 text-foreground" : "text-default-400"
                       }`}
                     >
@@ -207,7 +207,8 @@ export default function PredictCard({ match }: { match: MatchState }) {
                 </Button>
               </div>
               <p className="text-center text-tiny text-default-400">
-                Will {team}&apos;s win chance be higher or lower in 5 match minutes?
+                Will {team.endsWith("s") ? `${team}'` : `${team}'s`} win chance be higher or lower
+                in 5 match minutes?
               </p>
 
               {stats.plays > 0 && (

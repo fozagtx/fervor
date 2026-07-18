@@ -19,6 +19,12 @@ export const metadata: Metadata = {
   title: "Match Pulse — the heartbeat of the World Cup",
   description:
     "Live win probability, market shifts and match moments for every World Cup game, powered by TxLINE real-time data.",
+  openGraph: {
+    title: "Match Pulse",
+    description:
+      "Every match has a heartbeat. Live win probability from real betting-market consensus.",
+    type: "website",
+  },
 };
 
 export const viewport: Viewport = {
