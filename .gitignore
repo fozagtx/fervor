@@ -49,3 +49,4 @@ data/recordings/*/scores-*.jsonl
 *.png
 !public/*.png
 data/recordings/
+!docs/screenshots/*.png
