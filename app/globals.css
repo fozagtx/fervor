@@ -34,6 +34,17 @@ body {
   color: #18181b;
 }
 
+/* Floating mini scoreboard popup — don't force full-viewport chrome */
+html:has([data-torq-mini]),
+body:has([data-torq-mini]) {
+  min-height: 0 !important;
+  height: 100% !important;
+  overflow: hidden !important;
+  background: #0a0a0a !important;
+  color: #fafafa !important;
+  color-scheme: dark;
+}
+
 .dark body {
   background:
     radial-gradient(60rem 40rem at 85% -10%, rgba(16, 185, 129, 0.07), transparent 60%),
