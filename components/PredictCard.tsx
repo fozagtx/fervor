@@ -5,6 +5,8 @@ import { Icon } from "@iconify/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import type { MatchState, ProbPoint } from "@/lib/txline/types";
+import { playerId } from "@/lib/player";
+import { shortAddress } from "@/lib/useWallet";
 import { adoptGuestStats, type CallStats, EMPTY_STATS, loadStats, saveStats } from "@/lib/stats";
 import { useWallet } from "@/lib/useWallet";
 import { COLORS } from "./PulseChart";
@@ -53,6 +55,15 @@ export default function PredictCard({ match }: { match: MatchState }) {
     };
     setStats(next);
     saveStats(address, next);
+    fetch("/api/leaderboard", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: address ?? playerId(),
+        name: address ? shortAddress(address) : undefined,
+        ...next,
+      }),
+    }).catch(() => {});
     setResult({ won, from: pick.startProb, to: current, pick, gained });
     setPick(null);
   }, [latest, pick, stats, address]);
@@ -223,6 +234,11 @@ export default function PredictCard({ match }: { match: MatchState }) {
                 >
                   Share your record
                 </Button>
+              )}
+              {stats.plays > 0 && (
+                <a href="/leaders" className="self-center text-tiny text-default-400 underline-offset-2 hover:underline">
+                  See the top callers
+                </a>
               )}
             </motion.div>
           )}

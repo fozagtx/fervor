@@ -17,7 +17,12 @@ export default function SoundToggle() {
       startContent={
         <Icon icon={on ? "solar:music-note-2-bold" : "solar:muted-linear"} width={15} />
       }
-      onPress={toggle}
+      onPress={() => {
+        toggle();
+        if (typeof Notification !== "undefined" && Notification.permission === "default") {
+          void Notification.requestPermission();
+        }
+      }}
     >
       Stadium
     </Button>

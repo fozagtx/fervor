@@ -44,6 +44,15 @@ export default function GoalBlast({
       if (!active) continue;
       if (e.kind === "goal") {
         const team = e.side === "away" ? match.away : match.home;
+        if (typeof document !== "undefined" && document.hidden &&
+            typeof Notification !== "undefined" && Notification.permission === "granted") {
+          try {
+            new Notification(`GOAL! ${team}`, {
+              body: `${match.home} ${match.scoreHome}–${match.scoreAway} ${match.away}`,
+              icon: "/icon-192.png",
+            });
+          } catch {}
+        }
         play("/crowd.wav", 0.9);
         setTimeout(() => play("/goal.wav", 0.5), 250);
         setBlast({

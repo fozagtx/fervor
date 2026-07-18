@@ -28,6 +28,7 @@ struct MatchInfo {
     let probHome: Double?
     let probDraw: Double?
     let probAway: Double?
+    let series: [(h: Double, a: Double)]
 
     var isLive: Bool {
         let g = gameState.lowercased()
@@ -59,7 +60,7 @@ struct Notch {
 
 let NOTCH = Notch.read()
 let COLLAPSED = NSSize(width: max(NOTCH.width + 44, 340), height: NOTCH.height + 30)
-let HOVERED = NSSize(width: COLLAPSED.width + 14, height: COLLAPSED.height + 3)
+let HOVERED = NSSize(width: COLLAPSED.width, height: COLLAPSED.height + 4)
 let EXPANDED_WIDTH: CGFloat = max(COLLAPSED.width + 180, 560)
 let ROW_H: CGFloat = 42
 let STAGE = NSSize(width: EXPANDED_WIDTH + 40, height: NOTCH.height + 420)
@@ -291,7 +292,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         expandTimer?.invalidate()
         if isExpanded {
             collapseTimer?.invalidate()
-            collapseTimer = Timer.scheduledTimer(withTimeInterval: 0.3, repeats: false) { [weak self] _ in
+            collapseTimer = Timer.scheduledTimer(withTimeInterval: 0.4, repeats: false) { [weak self] _ in
                 self?.collapse()
             }
         } else {
@@ -328,8 +329,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let width = EXPANDED_WIDTH
         let headerH: CGFloat = 30
         let footerH: CGFloat = 34
+        let featured = shown.first { $0.fixtureId == currentFixture } ?? shown.first
+        let chartH: CGFloat = (featured?.series.count ?? 0) > 3 ? 74 : 0
         let rowsH = CGFloat(shown.count) * ROW_H
-        let contentH = headerH + rowsH + footerH + 10
+        let contentH = headerH + chartH + rowsH + footerH + 10
         let size = NSSize(width: width, height: NOTCH.height + contentH)
 
         expandedContent.frame = NSRect(x: 0, y: 0, width: width, height: contentH)
@@ -348,6 +351,48 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                 bg: NSColor(red: 0.06, green: 0.72, blue: 0.51, alpha: 0.18))
             liveChip.frame.origin = NSPoint(x: width - liveChip.frame.width - 18, y: y + 6)
             expandedContent.addSubview(liveChip)
+        }
+
+        // Real-time market chart for the featured match
+        if chartH > 0, let f = featured {
+            y -= chartH
+            let chart = NSView(frame: NSRect(x: 8, y: y, width: width - 16, height: chartH - 6))
+            chart.wantsLayer = true
+            chart.layer?.backgroundColor = NSColor(white: 1, alpha: 0.05).cgColor
+            chart.layer?.cornerRadius = 10
+
+            let inset: CGFloat = 10
+            let cw = chart.bounds.width - inset * 2
+            let ch = chart.bounds.height - inset * 2
+            func path(_ get: (( h: Double, a: Double)) -> Double) -> CGPath {
+                let p = CGMutablePath()
+                let pts = f.series
+                for (i, v) in pts.enumerated() {
+                    let x = inset + cw * CGFloat(i) / CGFloat(max(1, pts.count - 1))
+                    let yy = inset + ch * CGFloat(get(v) / 100.0)
+                    if i == 0 { p.move(to: CGPoint(x: x, y: yy)) } else { p.addLine(to: CGPoint(x: x, y: yy)) }
+                }
+                return p
+            }
+            for (get, color) in [
+                ({ (v: (h: Double, a: Double)) in v.h }, NSColor(red: 0.06, green: 0.72, blue: 0.51, alpha: 1)),
+                ({ (v: (h: Double, a: Double)) in v.a }, NSColor(red: 0.51, green: 0.55, blue: 0.97, alpha: 1)),
+            ] {
+                let line = CAShapeLayer()
+                line.path = path(get)
+                line.strokeColor = color.cgColor
+                line.fillColor = nil
+                line.lineWidth = 2
+                line.lineJoin = .round
+                line.lineCap = .round
+                chart.layer?.addSublayer(line)
+            }
+            let tag = NSTextField(labelWithString: "\(flag(f.home)) \(f.home) vs \(f.away) \(flag(f.away)) · live market")
+            tag.font = NSFont.monospacedSystemFont(ofSize: 9, weight: .medium)
+            tag.textColor = NSColor(white: 1, alpha: 0.4)
+            tag.frame = NSRect(x: 12, y: chart.bounds.height - 16, width: chart.bounds.width - 20, height: 12)
+            chart.addSubview(tag)
+            expandedContent.addSubview(chart)
         }
 
         for m in shown {
@@ -428,7 +473,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard !isExpanded, !matchesCache.isEmpty else { return }
         isExpanded = true
         let size = rebuildDashboard()
-        morph(to: size, radius: RADIUS_EXPANDED, duration: 0.42)
+        // Phase 1: pour downward from the notch, barely wider
+        let mid = NSSize(width: COLLAPSED.width + 36, height: size.height * 0.6)
+        NSAnimationContext.runAnimationGroup({ ctx in
+            ctx.duration = 0.14
+            ctx.allowsImplicitAnimation = true
+            ctx.timingFunction = CAMediaTimingFunction(name: .easeIn)
+            self.island.animator().frame = islandRect(mid)
+            self.island.layer?.cornerRadius = 18
+        }, completionHandler: {
+            // Phase 2: spring open to full width
+            self.morph(to: size, radius: RADIUS_EXPANDED, duration: 0.34)
+        })
         NSAnimationContext.runAnimationGroup { ctx in
             ctx.duration = 0.22
             ctx.allowsImplicitAnimation = true
@@ -474,6 +530,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             var matches: [MatchInfo] = []
             for m in list {
                 let probs = (m["probs"] as? [[String: Any]])?.last
+                let rawSeries = (m["series"] as? [[String: Any]]) ?? []
+                let series: [(h: Double, a: Double)] = rawSeries.compactMap { p in
+                    guard let h = p["home"] as? Double, let a = p["away"] as? Double else { return nil }
+                    return (h: h, a: a)
+                }
                 matches.append(MatchInfo(
                     fixtureId: m["fixtureId"] as? Int ?? 0,
                     home: m["home"] as? String ?? "",
@@ -485,7 +546,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     startTime: m["startTime"] as? Double ?? 0,
                     probHome: probs?["home"] as? Double,
                     probDraw: probs?["draw"] as? Double,
-                    probAway: probs?["away"] as? Double
+                    probAway: probs?["away"] as? Double,
+                    series: series
                 ))
             }
             DispatchQueue.main.async { self.apply(matches) }
