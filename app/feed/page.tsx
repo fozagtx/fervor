@@ -4,6 +4,7 @@ import { Button, Chip, Skeleton } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import Flag from "@/components/Flag";
 import Mascot from "@/components/Mascot";
 import { flagOf } from "@/lib/flags";
 import { COLORS } from "@/components/WaveChart";
@@ -148,8 +149,8 @@ export default function FeedPage() {
               </div>
 
               <div className="flex items-center justify-between gap-4">
-                <div className="flex flex-col items-center gap-1">
-                  <span className="text-5xl">{flagOf(m.home)}</span>
+                <div className="flex flex-col items-center gap-1.5">
+                  <Flag team={m.home} size="xl" />
                   <span className="text-small font-semibold">{m.home}</span>
                 </div>
                 <p className="font-mono text-5xl font-semibold tabular-nums">
@@ -157,8 +158,8 @@ export default function FeedPage() {
                   <span className="px-1 text-default-300">–</span>
                   {m.scoreAway}
                 </p>
-                <div className="flex flex-col items-center gap-1">
-                  <span className="text-5xl">{flagOf(m.away)}</span>
+                <div className="flex flex-col items-center gap-1.5">
+                  <Flag team={m.away} size="xl" />
                   <span className="text-small font-semibold">{m.away}</span>
                 </div>
               </div>

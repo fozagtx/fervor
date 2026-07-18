@@ -3,8 +3,8 @@
 import { Card, CardBody, Chip } from "@heroui/react";
 import type { MatchState } from "@/lib/txline/types";
 import { dramaScore } from "@/lib/drama";
-import { flagOf } from "@/lib/flags";
 import DramaMeter from "./DramaMeter";
+import Flag from "./Flag";
 import { COLORS } from "./WaveChart";
 
 export default function ScoreHeader({ match, replay }: { match: MatchState; replay?: boolean }) {
@@ -43,8 +43,8 @@ export default function ScoreHeader({ match, replay }: { match: MatchState; repl
         </div>
 
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
-          <div className="flex flex-col items-start gap-1">
-            <span className="text-3xl leading-none">{flagOf(match.home)}</span>
+          <div className="flex flex-col items-start gap-1.5">
+            <Flag team={match.home} size="lg" />
             <p className="text-large font-semibold leading-tight">{match.home}</p>
             <span className="h-1 w-8 rounded-full" style={{ background: COLORS.home }} />
           </div>
@@ -57,8 +57,8 @@ export default function ScoreHeader({ match, replay }: { match: MatchState; repl
           ) : (
             <p className="px-2 text-2xl font-medium text-default-400">vs</p>
           )}
-          <div className="flex flex-col items-end gap-1">
-            <span className="text-3xl leading-none">{flagOf(match.away)}</span>
+          <div className="flex flex-col items-end gap-1.5">
+            <Flag team={match.away} size="lg" />
             <p className="text-right text-large font-semibold leading-tight">{match.away}</p>
             <span className="h-1 w-8 rounded-full" style={{ background: COLORS.away }} />
           </div>

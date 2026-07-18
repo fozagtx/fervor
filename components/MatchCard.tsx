@@ -6,8 +6,8 @@ import { useRouter } from "next/navigation";
 import type { MatchState } from "@/lib/txline/types";
 import { dramaScore } from "@/lib/drama";
 import { useCountdown } from "@/lib/favorites";
-import { flagOf } from "@/lib/flags";
 import DramaMeter from "./DramaMeter";
+import Flag from "./Flag";
 import WhoWins from "./WhoWins";
 import { COLORS } from "./WaveChart";
 
@@ -75,7 +75,7 @@ export default function MatchCard({
         {/* Home — vs/score — Away */}
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
           <div className="flex min-w-0 items-center gap-1.5">
-            <span className="shrink-0 text-lg leading-none">{flagOf(match.home)}</span>
+            <Flag team={match.home} size="sm" />
             <span className="truncate text-small font-semibold">{match.home}</span>
           </div>
           <div className="flex flex-col items-center px-1">
@@ -93,7 +93,7 @@ export default function MatchCard({
           </div>
           <div className="flex min-w-0 items-center justify-end gap-1.5">
             <span className="truncate text-right text-small font-semibold">{match.away}</span>
-            <span className="shrink-0 text-lg leading-none">{flagOf(match.away)}</span>
+            <Flag team={match.away} size="sm" />
           </div>
         </div>
 

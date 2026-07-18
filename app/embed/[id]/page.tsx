@@ -3,9 +3,9 @@
 import { Icon } from "@iconify/react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import Flag from "@/components/Flag";
 import WaveChart from "@/components/WaveChart";
 import { dramaScore } from "@/lib/drama";
-import { flagOf } from "@/lib/flags";
 import { useMatchStream } from "@/lib/useMatchStream";
 import { COLORS } from "@/components/WaveChart";
 
@@ -38,7 +38,7 @@ export default function EmbedPage() {
     <main className="flex h-dvh flex-col gap-2 bg-[#0a0a0a] px-3 py-2.5 text-white">
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-1.5">
-          <span className="text-lg leading-none">{flagOf(match.home)}</span>
+          <Flag team={match.home} size="sm" />
           <span className="truncate text-xs font-semibold">{match.home}</span>
         </div>
         <div className="flex shrink-0 flex-col items-center">

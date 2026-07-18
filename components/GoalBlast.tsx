@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import Mascot from "@/components/Mascot";
-import { flagOf } from "@/lib/flags";
 import type { MatchState } from "@/lib/txline/types";
+import Flag from "./Flag";
 import { COLORS } from "./WaveChart";
 
 import { playSound as play } from "@/lib/sound";
@@ -113,8 +113,9 @@ export default function GoalBlast({
             <p className="font-pixel text-3xl" style={{ color }}>
               GOOOAL!
             </p>
-            <p className="text-medium font-semibold">
-              {flagOf(blast.team)} {blast.team} · <span className="font-mono">{blast.score}</span>
+            <p className="flex items-center gap-2 text-medium font-semibold">
+              <Flag team={blast.team} size="sm" />
+              {blast.team} · <span className="font-mono">{blast.score}</span>
             </p>
           </motion.div>
 

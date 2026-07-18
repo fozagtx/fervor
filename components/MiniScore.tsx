@@ -4,8 +4,8 @@ import { Icon } from "@iconify/react";
 import Link from "next/link";
 import { dramaScore } from "@/lib/drama";
 import Mascot from "@/components/Mascot";
-import { flagOf } from "@/lib/flags";
 import { useMatchStream } from "@/lib/useMatchStream";
+import Flag from "./Flag";
 import { COLORS } from "./WaveChart";
 
 /** Island-style compact scoreboard for a floating mini window (~380×150). */
@@ -37,7 +37,7 @@ export default function MiniScore({ fixtureId }: { fixtureId: number }) {
     >
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 flex-1 items-center gap-1.5">
-          <span className="shrink-0 text-xl leading-none">{flagOf(match.home)}</span>
+          <Flag team={match.home} size="sm" />
           <span className="truncate text-xs font-semibold">{match.home}</span>
         </div>
         <div className="flex shrink-0 flex-col items-center px-1">
@@ -63,7 +63,7 @@ export default function MiniScore({ fixtureId }: { fixtureId: number }) {
         </div>
         <div className="flex min-w-0 flex-1 items-center justify-end gap-1.5">
           <span className="truncate text-xs font-semibold">{match.away}</span>
-          <span className="shrink-0 text-xl leading-none">{flagOf(match.away)}</span>
+          <Flag team={match.away} size="sm" />
         </div>
       </div>
 

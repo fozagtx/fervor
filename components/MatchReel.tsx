@@ -7,11 +7,11 @@ import { useRouter } from "next/navigation";
 import { useMemo } from "react";
 import { dramaScore } from "@/lib/drama";
 import { useCountdown, useFavorites } from "@/lib/favorites";
-import { flagOf } from "@/lib/flags";
 import { shareWatch } from "@/lib/share";
 import { useMatchStream } from "@/lib/useMatchStream";
 import type { MatchState } from "@/lib/txline/types";
 import DramaMeter from "./DramaMeter";
+import Flag from "./Flag";
 import Logo from "./Logo";
 import MarketSlip from "./MarketSlip";
 import MuteButton from "./MuteButton";
@@ -55,13 +55,10 @@ export default function MatchReel() {
       <header className="pointer-events-none fixed inset-x-0 top-0 z-40 flex items-center justify-between px-3 pb-2 pt-[max(0.65rem,env(safe-area-inset-top))]">
         <Link
           href="/"
-          className="pointer-events-auto flex items-center gap-2 rounded-full border border-zinc-200 bg-white/95 px-2.5 py-1.5 shadow-sm"
+          aria-label="Torq home"
+          className="pointer-events-auto flex items-center rounded-full border border-zinc-200 bg-white/95 p-1.5 shadow-sm"
         >
-          <Logo size={26} />
-          <span className="text-small font-semibold text-zinc-900">Torq</span>
-          <span className="hidden rounded-full bg-amber-100 px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase text-amber-800 sm:inline">
-            FOMO
-          </span>
+          <Logo size={28} />
         </Link>
         <div className="pointer-events-auto flex items-center gap-0.5 rounded-full border border-zinc-200 bg-white/95 p-1 shadow-sm">
           <MuteButton />
@@ -152,8 +149,8 @@ function ReelSlide({
           onClick={() => router.push(href)}
           className="mb-3 grid w-full grid-cols-[1fr_auto_1fr] items-center gap-2 text-left active:scale-[0.99]"
         >
-          <div className="flex min-w-0 flex-col items-center gap-1">
-            <span className="text-5xl leading-none">{flagOf(match.home)}</span>
+          <div className="flex min-w-0 flex-col items-center gap-1.5">
+            <Flag team={match.home} size="xl" />
             <span className="w-full truncate text-center text-small font-semibold text-zinc-900">
               {match.home}
             </span>
@@ -174,8 +171,8 @@ function ReelSlide({
               </p>
             )}
           </div>
-          <div className="flex min-w-0 flex-col items-center gap-1">
-            <span className="text-5xl leading-none">{flagOf(match.away)}</span>
+          <div className="flex min-w-0 flex-col items-center gap-1.5">
+            <Flag team={match.away} size="xl" />
             <span className="w-full truncate text-center text-small font-semibold text-zinc-900">
               {match.away}
             </span>

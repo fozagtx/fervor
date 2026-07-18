@@ -5,7 +5,7 @@ import { Icon } from "@iconify/react";
 import { useCallback, useEffect, useState } from "react";
 import type { MatchState } from "@/lib/txline/types";
 import { playerId } from "@/lib/player";
-import { flagOf } from "@/lib/flags";
+import Flag from "./Flag";
 import { COLORS } from "./WaveChart";
 
 type Side = "home" | "draw" | "away";
@@ -133,8 +133,8 @@ export default function WhoWins({
                   : "border-default-200 hover:border-default-400"
               }`}
             >
-              <p className="truncate text-[10px] font-semibold leading-tight">
-                {s === "draw" ? "Draw" : flagOf(label(s))}
+              <p className="flex items-center justify-center gap-0.5 truncate text-[10px] font-semibold leading-tight">
+                {s === "draw" ? "Draw" : <Flag team={label(s)} size="xs" />}
               </p>
               <p className="font-mono text-[11px] font-bold tabular-nums">
                 {pct(tallies[s], tallies.total)}%
@@ -189,8 +189,8 @@ export default function WhoWins({
                 isDisabled={finished || busy}
                 onPress={() => vote(side)}
               >
-                <span className="text-lg leading-none">
-                  {side === "draw" ? "🤝" : flagOf(name)}
+                <span className="flex items-center justify-center leading-none">
+                  {side === "draw" ? "🤝" : <Flag team={name} size="sm" />}
                 </span>
                 <span className="max-w-full truncate text-tiny font-semibold">{name}</span>
                 <span className="font-mono text-medium font-bold tabular-nums" style={{ color: yours === side ? undefined : color }}>

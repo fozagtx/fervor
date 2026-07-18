@@ -1,5 +1,64 @@
-/** National-team flag emoji, keyed by the names the TxLINE feed uses. */
-const FLAGS: Record<string, string> = {
+/** ISO / flagcdn codes keyed by the names the TxLINE feed uses. */
+const CODES: Record<string, string> = {
+  Argentina: "ar",
+  Australia: "au",
+  Austria: "at",
+  Belgium: "be",
+  Bolivia: "bo",
+  Brazil: "br",
+  Cameroon: "cm",
+  Canada: "ca",
+  Chile: "cl",
+  Colombia: "co",
+  "Costa Rica": "cr",
+  Croatia: "hr",
+  Denmark: "dk",
+  Ecuador: "ec",
+  Egypt: "eg",
+  England: "gb-eng",
+  France: "fr",
+  Germany: "de",
+  Ghana: "gh",
+  Greece: "gr",
+  Iran: "ir",
+  Italy: "it",
+  "Ivory Coast": "ci",
+  Japan: "jp",
+  Jordan: "jo",
+  "Korea Republic": "kr",
+  Mexico: "mx",
+  Morocco: "ma",
+  Netherlands: "nl",
+  "New Zealand": "nz",
+  Nigeria: "ng",
+  Norway: "no",
+  Panama: "pa",
+  Paraguay: "py",
+  Peru: "pe",
+  Poland: "pl",
+  Portugal: "pt",
+  Qatar: "qa",
+  "Saudi Arabia": "sa",
+  Scotland: "gb-sct",
+  Senegal: "sn",
+  Serbia: "rs",
+  "South Korea": "kr",
+  Spain: "es",
+  Sweden: "se",
+  Switzerland: "ch",
+  Tunisia: "tn",
+  Turkey: "tr",
+  Türkiye: "tr",
+  Ukraine: "ua",
+  Uruguay: "uy",
+  USA: "us",
+  "United States": "us",
+  Uzbekistan: "uz",
+  Wales: "gb-wls",
+};
+
+/** Emoji fallback for share text / plain strings. */
+const EMOJI: Record<string, string> = {
   Argentina: "🇦🇷",
   Australia: "🇦🇺",
   Austria: "🇦🇹",
@@ -57,6 +116,19 @@ const FLAGS: Record<string, string> = {
   Wales: "🏴󠁧󠁢󠁷󠁬󠁳󠁿",
 };
 
+export function codeOf(team: string): string | null {
+  const t = team.trim();
+  return CODES[t] ?? CODES[team] ?? null;
+}
+
+/** Real PNG from flagcdn (w40 / w80 / w160). */
+export function flagUrl(team: string, width: 40 | 80 | 160 = 80): string | null {
+  const code = codeOf(team);
+  if (!code) return null;
+  return `https://flagcdn.com/w${width}/${code}.png`;
+}
+
+/** Emoji for tweets / plain text only. Prefer <Flag /> in UI. */
 export function flagOf(team: string): string {
-  return FLAGS[team] ?? FLAGS[team.trim()] ?? "";
+  return EMOJI[team] ?? EMOJI[team.trim()] ?? "🏳️";
 }

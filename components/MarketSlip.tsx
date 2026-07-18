@@ -2,9 +2,9 @@
 
 import { Icon } from "@iconify/react";
 import { useCallback, useEffect, useState } from "react";
-import { flagOf } from "@/lib/flags";
 import { playerId } from "@/lib/player";
 import type { MatchState } from "@/lib/txline/types";
+import Flag from "./Flag";
 import FomoStrip, { type FomoRecent } from "./FomoStrip";
 import { COLORS } from "./WaveChart";
 
@@ -197,8 +197,15 @@ export default function MarketSlip({ match }: { match: MatchState }) {
                 </span>
               )}
               <span className="font-mono text-[10px] font-bold text-zinc-400">{code}</span>
-              <span className="max-w-full truncate text-[11px] font-semibold text-zinc-800">
-                {side === "draw" ? "Draw" : flagOf(name)} {side !== "draw" ? name.split(" ")[0] : ""}
+              <span className="flex max-w-full items-center justify-center gap-1 truncate text-[11px] font-semibold text-zinc-800">
+                {side === "draw" ? (
+                  "Draw"
+                ) : (
+                  <>
+                    <Flag team={name} size="xs" />
+                    {name.split(" ")[0]}
+                  </>
+                )}
               </span>
               <span
                 className="font-mono text-xl font-bold tabular-nums leading-none"
