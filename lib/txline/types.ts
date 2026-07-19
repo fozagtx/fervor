@@ -71,7 +71,7 @@ export interface TxScores {
   /** 2=1st half, 3=half-time, 4=2nd half, 5=ended, 100=finalised */
   StatusId?: number;
   Type?: string;
-  /** 1 or 2 — which participant the action belongs to */
+  /** 1 or 2 - which participant the action belongs to */
   Participant?: number;
   Confirmed?: boolean;
   Clock?: { Running?: boolean; Seconds?: number };

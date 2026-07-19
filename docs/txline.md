@@ -1,6 +1,6 @@
 # TxLINE Integration
 
-How Torq uses TxLINE — endpoints, auth, and hackathon API feedback.
+How Torq uses TxLINE - endpoints, auth, and hackathon API feedback.
 
 ## Auth
 
@@ -37,10 +37,10 @@ Server-side only (fans never touch a wallet):
 ## API feedback (Earn form)
 
 **Liked most**
-- Demargined `Pct` — consumer win-probability with zero odds math
+- Demargined `Pct` - consumer win-probability with zero odds math
 - Free World Cup tier + on-chain subscribe / activate worked as documented
-- No rate limiting — historical backfill was painless
-- Runnable devnet examples — auth working in the first hour
+- No rate limiting - historical backfill was painless
+- Runnable devnet examples - auth working in the first hour
 
 **Friction**
 - Spec camelCase vs live/historical PascalCase (`FixtureId`, `GameState`, …)

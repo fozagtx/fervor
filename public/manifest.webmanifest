@@ -1,7 +1,7 @@
 {
   "name": "Torq",
   "short_name": "Torq",
-  "description": "World Cup second screen — live win probability, drama, and Beat the Market.",
+  "description": "World Cup second screen - live win probability, drama, and Beat the Market.",
   "start_url": "/matches",
   "display": "standalone",
   "background_color": "#FFFFFF",

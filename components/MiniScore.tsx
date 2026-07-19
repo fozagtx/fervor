@@ -7,7 +7,7 @@ import { COLORS } from "./WaveChart";
 
 /**
  * Tiny popup scoreboard (380×~110). Never stretches.
- * Full browser tabs never land here — middleware requires ?p=1.
+ * Full browser tabs never land here - middleware requires ?p=1.
  */
 export default function MiniScore({ fixtureId }: { fixtureId: number }) {
   const { matches } = useMatchStream({ fixtureId });

@@ -3,7 +3,7 @@ export default function Logo({
   showName = false,
 }: {
   size?: number;
-  /** Wordmark beside the mark — use in headers so the brand isn’t just an icon. */
+  /** Wordmark beside the mark - use in headers so the brand isn’t just an icon. */
   showName?: boolean;
 }) {
   const mark = (

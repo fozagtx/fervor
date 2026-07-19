@@ -35,7 +35,7 @@ function reelWorthy(m: MatchState, now = Date.now()): boolean {
     if (m.startTime > now + 14 * 24 * 3600_000) return false; // too far out
     return true;
   }
-  // Keep recent FT for replay — not the whole archive
+  // Keep recent FT for replay - not the whole archive
   return m.startTime > now - 5 * 24 * 3600_000;
 }
 
@@ -57,11 +57,11 @@ function sortReel(matches: MatchState[], favorites: string[]) {
   });
 }
 
-/** TikTok feed × SportyBet 1X2 slip — white stage, one market per swipe. */
+/** TikTok feed × SportyBet 1X2 slip - white stage, one market per swipe. */
 export default function MatchReel() {
   const { matches, connected, revision } = useMatchStream();
   const { favorites, toggle } = useFavorites();
-  // `revision` must be a dep — matches Map ref is stable while contents update.
+  // `revision` must be a dep - matches Map ref is stable while contents update.
   const reel = useMemo(() => {
     const worth = [...matches.values()].filter((m) => reelWorthy(m));
     return sortReel(worth, favorites);
@@ -95,7 +95,7 @@ export default function MatchReel() {
         </div>
       </header>
 
-      {/* Mac notch CTA — always visible under the header on the reel */}
+      {/* Mac notch CTA - always visible under the header on the reel */}
       <div className="pointer-events-none fixed inset-x-0 top-[max(3.4rem,calc(env(safe-area-inset-top)+2.75rem))] z-30 flex justify-center px-3">
         <a
           href={MAC_DMG_URL}
@@ -175,7 +175,7 @@ function ReelSlide({
   const href = finished ? `/match/${match.fixtureId}?replay=1` : `/match/${match.fixtureId}`;
   const starred = favorites.includes(match.home) || favorites.includes(match.away);
 
-  // FT stream buffer is often empty — pull recorded wave so we show it before recap/replay.
+  // FT stream buffer is often empty - pull recorded wave so we show it before recap/replay.
   const [wave, setWave] = useState<{
     probs: ProbPoint[];
     events: MatchEvent[];
@@ -263,7 +263,7 @@ function ReelSlide({
           <MarketSlip match={display} />
         </div>
 
-        {/* Compact wave — shown for FT before opening full recap / replay */}
+        {/* Compact wave - shown for FT before opening full recap / replay */}
         <div
           className="reel-enter mb-2 min-h-0 flex-1 overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50/80 px-1 pt-1"
           style={{ ["--stagger" as string]: "120ms" }}

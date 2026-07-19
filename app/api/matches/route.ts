@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
     let events = m.events;
     let seriesSource = m.probs;
 
-    // Finished fixtures often have an empty live buffer — hydrate from recordings
+    // Finished fixtures often have an empty live buffer - hydrate from recordings
     // so the lobby / island can show the wave before replay / recap.
     if (isFinished(m) && m.probs.length < 8) {
       const history = historyFor(m);

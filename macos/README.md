@@ -35,4 +35,4 @@ hdiutil create -volname Torq -srcfolder "$STAGE" -ov -format UDZO dist/Torq.dmg
 rm -rf "$STAGE"
 ```
 
-Everyone’s island hits the same live Railway URL — no API keys on their machine.
+Everyone’s island hits the same live Railway URL - no API keys on their machine.

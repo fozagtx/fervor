@@ -22,7 +22,7 @@ function pct(n: number, total: number) {
   return Math.round((n / total) * 100);
 }
 
-/** FOMO pick: who wins — crowd split vs market favorite. No money. */
+/** FOMO pick: who wins - crowd split vs market favorite. No money. */
 export default function WhoWins({
   match,
   compact = false,
@@ -224,7 +224,7 @@ export default function WhoWins({
                 Crowd leans <span className="font-semibold text-foreground">{label(crowdFav)}</span>
               </>
             ) : (
-              "Cast a call — create the FOMO"
+              "Cast a call - create the FOMO"
             )}
           </span>
           {marketFav && latest && (
@@ -236,7 +236,7 @@ export default function WhoWins({
 
         {yours && crowdFav && yours !== crowdFav && tallies.total >= 5 && (
           <p className="rounded-medium bg-warning-50 px-3 py-2 text-tiny text-warning-700 dark:bg-warning-950/50 dark:text-warning-300">
-            You&apos;re fading the room — {pct(tallies[crowdFav], tallies.total)}% are on {label(crowdFav)}.
+            You&apos;re fading the room - {pct(tallies[crowdFav], tallies.total)}% are on {label(crowdFav)}.
           </p>
         )}
 

@@ -27,7 +27,7 @@ function sideName(match: MatchState, side: Side) {
   return "Draw";
 }
 
-/** Live FOMO ticker — recent locks + heat + urgency. */
+/** Live FOMO ticker - recent locks + heat + urgency. */
 export default function FomoStrip({
   match,
   lockingNow = 0,
@@ -67,16 +67,16 @@ export default function FomoStrip({
   }
   if (koSoon) {
     const m = Math.ceil(msToKo / 60000);
-    lines.push(`Kick-off in ${m}m — calls close when FT hits`);
+    lines.push(`Kick-off in ${m}m - calls close when FT hits`);
   }
   if (drama >= 55) {
-    lines.push(`Drama ${drama}/100 — market is moving hard`);
+    lines.push(`Drama ${drama}/100 - market is moving hard`);
   }
   if (total >= 10 && !lockingNow) {
     lines.push(`${total} fans already in this market`);
   }
   if (lines.length === 0) {
-    lines.push(finished ? "Market closed — see who called it" : "Be first — lock a side before the room fills");
+    lines.push(finished ? "Market closed - see who called it" : "Be first - lock a side before the room fills");
   }
 
   const line = lines[tick % lines.length];

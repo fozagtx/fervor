@@ -1,9 +1,9 @@
-# Torq — Product Engineering Context Profile
+# Torq - Product Engineering Context Profile
 
 **Generated:** 2026-07-18  
 **Track:** TxODDS Consumer & Fan Experiences (World Cup)  
 **Live:** https://torq.up.railway.app · repo: github.com/fozagtx/fervor  
-**Methods used:** BPFG Hackathon OS · Build-DeFi (integrate-vs-build) · Colosseum Copilot *(token missing — landscape from session evidence)*
+**Methods used:** BPFG Hackathon OS · Build-DeFi (integrate-vs-build) · Colosseum Copilot *(token missing - landscape from session evidence)*
 
 ---
 
@@ -28,7 +28,7 @@
 
 ## 2. Living question (BPFG)
 
-> **Do World Cup fans want the market’s heartbeat as a second screen — or do they only want scores, and “odds” still feel like gambling even when no money moves?**
+> **Do World Cup fans want the market’s heartbeat as a second screen - or do they only want scores, and “odds” still feel like gambling even when no money moves?**
 
 Open in two directions:
 1. If yes → wave + drama + Beat-the-market is the product.
@@ -63,10 +63,10 @@ Open in two directions:
 - Replay is the judge-proof and the post-tournament life
 
 ### B. Market-data expertise (TxLINE)
-- Use `Pct` — never reinvent odds math
+- Use `Pct` - never reinvent odds math
 - StatusId ≠ top-level GameState (known feed footgun)
 - Historical archive + materialize = demo insurance
-- Free tier on-chain subscribe is the sponsor story — keep it server-side
+- Free tier on-chain subscribe is the sponsor story - keep it server-side
 
 ### C. Solana / “DeFi integrate” expertise (build-defi-protocol lens)
 **Decision: Integrate, do not build a custom DeFi program.**
@@ -84,7 +84,7 @@ Non-negotiable for this product: no user funds, no custom vault math, no oracle 
 - Prize description = rubric (Consumer & Fan Experiences)
 - Demo golden path > feature count
 - Live match tonight (FRA–ENG) is the money shot; replay is backup
-- Name collision with a peer submission was a real risk — Torq is the fix
+- Name collision with a peer submission was a real risk - Torq is the fix
 
 ---
 
@@ -104,29 +104,29 @@ Non-negotiable for this product: no user funds, no custom vault math, no oracle 
 | Leaderboard | ✅ | ❌ | |
 | Follow / favorites sync | ✅ + API | ✅ paste code | |
 | On-chain proof | ✅ | ❌ | Deep link to proof on web |
-| Demo video | ❌ | — | **Critical gap** |
-| Submission polish | partial | — | Screenshots/docs need refresh |
+| Demo video | ❌ | - | **Critical gap** |
+| Submission polish | partial | - | Screenshots/docs need refresh |
 
 ---
 
 ## 5. Identity gaps we’re missing (ranked)
 
-### P0 — kills the win if ignored
-1. **Demo video not recorded** — Earn weights video heavily; live FRA–ENG (~5–6h) is the window.
-2. **Product still feels “odds app” to some judges** — hero copy and first viewport must scream *fan second screen*, not trading.
-3. **Island ↔ web parity of the wave** — if judges only see the notch without a clear river, the signature is invisible.
+### P0 - kills the win if ignored
+1. **Demo video not recorded** - Earn weights video heavily; live FRA–ENG (~5–6h) is the window.
+2. **Product still feels “odds app” to some judges** - hero copy and first viewport must scream *fan second screen*, not trading.
+3. **Island ↔ web parity of the wave** - if judges only see the notch without a clear river, the signature is invisible.
 
-### P1 — expertise / identity holes
-4. **No “why Torq is distinct” one-pager** in submission — name was fixed; differentiation story must be explicit (wave + drama + replay + proof + island).
-5. **Beat the market invisible on island** — social proof of skill game doesn’t leave the browser.
-6. **Proof is buried** — “provably real” is a sponsor-aligned differentiator; one-tap from lobby/FT card is weak today.
-7. **Colosseum landscape not locked** — Copilot PAT missing; we can’t cite 5,400-project crowdedness for sports/fan products yet.
+### P1 - expertise / identity holes
+4. **No “why Torq is distinct” one-pager** in submission - name was fixed; differentiation story must be explicit (wave + drama + replay + proof + island).
+5. **Beat the market invisible on island** - social proof of skill game doesn’t leave the browser.
+6. **Proof is buried** - “provably real” is a sponsor-aligned differentiator; one-tap from lobby/FT card is weak today.
+7. **Colosseum landscape not locked** - Copilot PAT missing; we can’t cite 5,400-project crowdedness for sports/fan products yet.
 
-### P2 — void language not fully closed
-8. **“Which game should I watch?”** — drama sorts lobby but isn’t the landing hero.
-9. **Watch party depth** — share link exists; no live reaction sync during the match.
-10. **Streamer distribution** — embed exists; no OBS one-click / docs in submission.
-11. **Pre-match ritual** — countdown exists; no “lineup of the night” / pinned final-four rail.
+### P2 - void language not fully closed
+8. **“Which game should I watch?”** - drama sorts lobby but isn’t the landing hero.
+9. **Watch party depth** - share link exists; no live reaction sync during the match.
+10. **Streamer distribution** - embed exists; no OBS one-click / docs in submission.
+11. **Pre-match ritual** - countdown exists; no “lineup of the night” / pinned final-four rail.
 
 ### Explicit non-gaps (do not build tonight)
 - FossaPay / Naira Shield wallet rails (different product)
@@ -152,7 +152,7 @@ Record that. Submission text second. No new features after kickoff unless the st
 
 **User in first 10s:** Fan, TV on, phone in hand, group chat blowing up, doesn’t know which signal to trust.
 
-**Aha:** The green line lurches before the replay on TV finishes — “oh, that’s the game.”
+**Aha:** The green line lurches before the replay on TV finishes - “oh, that’s the game.”
 
 **Click path (≤90s)**
 1. Open https://torq.up.railway.app/
@@ -170,14 +170,14 @@ Record that. Submission text second. No new features after kickoff unless the st
 
 ## 8. Colosseum Copilot status
 
-`TOKEN_STATUS: missing` — landscape search/compare not run.
+`TOKEN_STATUS: missing` - landscape search/compare not run.
 
 To unlock winner/gap tables from 5,400+ Solana hackathon projects:
 1. Get PAT at https://arena.colosseum.org/copilot  
 2. Paste token (or `superstack copilot --token <pat>`)  
 3. Re-run: search “sports odds fan second screen” + winner compare on consumer tags  
 
-**Session-known peer:** another Earn companion (same World Cup companion framing) — our differentiation is Torq naming + drama + island + GoalBlast + on-chain score proof + Beat streak/leaderboard.
+**Session-known peer:** another Earn companion (same World Cup companion framing) - our differentiation is Torq naming + drama + island + GoalBlast + on-chain score proof + Beat streak/leaderboard.
 
 ---
 

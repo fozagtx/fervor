@@ -72,7 +72,7 @@ export default function MatchCard({
           )}
         </div>
 
-        {/* Home — vs/score — Away */}
+        {/* Home - vs/score - Away */}
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
           <div className="flex min-w-0 items-center gap-1.5">
             <Flag team={match.home} size="sm" />

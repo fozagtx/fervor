@@ -16,7 +16,7 @@ export interface FixturePoll {
   home: number;
   draw: number;
   away: number;
-  /** playerId → side — one vote per fan per fixture */
+  /** playerId → side - one vote per fan per fixture */
   voters: Record<string, Side>;
   recent: RecentLock[];
   updated: number;
@@ -84,7 +84,7 @@ export function castVote(fixtureId: number, player: string, side: Side) {
   return publicPoll(poll);
 }
 
-/** Public shape — no voter map. Includes FOMO fields. */
+/** Public shape - no voter map. Includes FOMO fields. */
 export function publicPoll(poll: FixturePoll) {
   const now = Date.now();
   const recent = (poll.recent ?? []).filter((r) => now - r.at < 30 * 60 * 1000).slice(0, 12);

@@ -22,7 +22,7 @@ const pixel = Silkscreen({
 });
 
 export const metadata: Metadata = {
-  title: "Torq — the heartbeat of the World Cup",
+  title: "Torq - the heartbeat of the World Cup",
   description:
     "Live win chances, momentum swings and match moments for every World Cup game. Watch the market move, call the swings, relive the drama.",
   openGraph: {

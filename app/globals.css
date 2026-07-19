@@ -9,7 +9,7 @@
   --chart-grid: #e4e4e7;
   --chart-marker-bg: #ffffff;
   --chart-draw-label: #71717a;
-  /* Emil / Apple-style motion tokens — strong ease-out, keep UI < 300ms */
+  /* Emil / Apple-style motion tokens - strong ease-out, keep UI < 300ms */
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
@@ -40,7 +40,7 @@ body {
   color: #18181b;
 }
 
-/* /mini popup — fixed 380px strip, no full-viewport stretch / white void */
+/* /mini popup - fixed 380px strip, no full-viewport stretch / white void */
 html[data-torq-mini-root],
 html:has([data-torq-mini]),
 body[data-torq-mini-root],
@@ -106,7 +106,7 @@ body:has([data-torq-mini]) [data-nextjs-toast] {
   animation: live-beat 1.6s ease-in-out infinite;
 }
 
-/* Pressable — instant feedback (Emil: scale 0.97, transform-only) */
+/* Pressable - instant feedback (Emil: scale 0.97, transform-only) */
 .pressable {
   transition: transform var(--duration-press) var(--ease-out);
 }
@@ -120,7 +120,7 @@ body:has([data-torq-mini]) [data-nextjs-toast] {
   }
 }
 
-/* Reel slide enter — opacity + slight rise, stagger via --stagger */
+/* Reel slide enter - opacity + slight rise, stagger via --stagger */
 @keyframes reel-enter {
   from {
     opacity: 0;

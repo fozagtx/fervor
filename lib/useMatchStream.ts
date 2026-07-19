@@ -13,7 +13,7 @@ export interface StreamState {
   matches: Map<number, MatchState>;
   connected: boolean;
   replayDone: boolean;
-  /** Increments on every stream update — use in useMemo deps (Map ref is stable). */
+  /** Increments on every stream update - use in useMemo deps (Map ref is stable). */
   revision: number;
 }
 
@@ -71,7 +71,7 @@ export function useMatchStream(opts: StreamOptions = {}) {
       }
       switch (msg.type) {
         case "init":
-          // Merge — don't wipe REST hydrate if stream payload is thinner
+          // Merge - don't wipe REST hydrate if stream payload is thinner
           for (const m of msg.matches) {
             const prev = matches.get(m.fixtureId);
             if (prev && prev.probs.length > m.probs.length && prev.gameState === m.gameState) {

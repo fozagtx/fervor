@@ -86,19 +86,19 @@ struct Notch {
 
 let NOTCH = Notch.read()
 let FILLET: CGFloat = 9
-/// Wings hug the camera — no fat empty black bars on the sides.
+/// Wings hug the camera - no fat empty black bars on the sides.
 let COLLAPSED = NSSize(width: NOTCH.width + 108 + FILLET * 2, height: NOTCH.height)
 let HOVERED = NSSize(width: COLLAPSED.width + 4, height: COLLAPSED.height + 4)
-/// Wider expanded dashboard — room for slip + wave without feeling cramped.
+/// Wider expanded dashboard - room for slip + wave without feeling cramped.
 let EXPANDED_WIDTH: CGFloat = max(COLLAPSED.width + 120, 560)
-/// Content inset = fillet curve + 2pt — fill the island edge-to-edge.
+/// Content inset = fillet curve + 2pt - fill the island edge-to-edge.
 let SIDE: CGFloat = FILLET + 2
 let ROW_H: CGFloat = 34
 let STAGE = NSSize(width: EXPANDED_WIDTH + 48, height: NOTCH.height + 680)
 
-/// SportyBet-style decimal price from win % — display only, no stake.
+/// SportyBet-style decimal price from win % - display only, no stake.
 func marketPrice(_ prob: Double?) -> String {
-    guard let p = prob, p >= 1 else { return "—" }
+    guard let p = prob, p >= 1 else { return "-" }
     let d = min(25.0, max(1.01, 100.0 / p))
     return String(format: "%.2f", d)
 }
@@ -193,7 +193,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     var stage: StageView!
     var island: NSView!
     var hoverPoll: Timer?
-    /// When true: full click-through — never expand, never steal browser scroll/clicks.
+    /// When true: full click-through - never expand, never steal browser scroll/clicks.
     var paused = UserDefaults.standard.bool(forKey: "torq.paused")
     var pauseMenuItem: NSMenuItem!
     var collapsedContent: NSView!
@@ -456,7 +456,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         stage.addSubview(island)
         stage.hot = island
 
-        // Compact wings: mascot left of the camera, readout to its right — tight, no dead air
+        // Compact wings: mascot left of the camera, readout to its right - tight, no dead air
         collapsedContent = NSView(frame: NSRect(x: 0, y: 0, width: COLLAPSED.width, height: COLLAPSED.height))
         let wing = (COLLAPSED.width - NOTCH.width) / 2
         let midY = (COLLAPSED.height - 16) / 2
@@ -493,7 +493,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         expandedContent.alphaValue = 0
         island.addSubview(expandedContent)
 
-        // Clicks only for mute / stars / open match — expand is hover-only
+        // Clicks only for mute / stars / open match - expand is hover-only
         let click = NSClickGestureRecognizer(target: self, action: #selector(islandClicked(_:)))
         island.addGestureRecognizer(click)
 
@@ -502,7 +502,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         startHoverPolling()
     }
 
-    /// Screen-space hover poll — reliable on nonactivating notch panels
+    /// Screen-space hover poll - reliable on nonactivating notch panels
     /// where NSTrackingArea often never fires.
     func startHoverPolling() {
         hoverPoll?.invalidate()
@@ -528,7 +528,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
         let mouse = NSEvent.mouseLocation
-        // Tight pad — wide pads steal Chrome tab / URL bar clicks.
+        // Tight pad - wide pads steal Chrome tab / URL bar clicks.
         let rect = islandScreenRect().insetBy(dx: -2, dy: -3)
         let inside = rect.contains(mouse)
         panel?.ignoresMouseEvents = !inside
@@ -543,7 +543,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func morph(to size: NSSize, radius: CGFloat, duration: TimeInterval, then: (() -> Void)? = nil) {
         let newPath = notchPath(size: size, bottomRadius: radius)
-        // Smooth ease-out — no bouncy overshoot that desyncs width vs height.
+        // Smooth ease-out - no bouncy overshoot that desyncs width vs height.
         let timing = CAMediaTimingFunction(controlPoints: 0.22, 0.9, 0.28, 1)
         CATransaction.begin()
         CATransaction.setAnimationDuration(duration)
@@ -721,7 +721,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: who-wins / 1X2 calls
 
     func fomoLine(from root: [String: Any], lockingNow: Int, heat: Int, total: Int) -> String {
-        if lockingNow > 0 { return "\(lockingNow) locking in right now — jump in" }
+        if lockingNow > 0 { return "\(lockingNow) locking in right now - jump in" }
         if let recent = root["recent"] as? [[String: Any]], let first = recent.first {
             let side = first["side"] as? String ?? "home"
             let tag = first["tag"] as? String ?? "fan"
@@ -729,9 +729,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let agoTxt = ago < 5 ? "just now" : (ago < 60 ? "\(ago)s ago" : "\(ago / 60)m ago")
             return "fan_\(tag) locked \(side) · \(agoTxt)"
         }
-        if heat >= 40 { return "Heat \(heat) — room is warming up" }
-        if total >= 5 { return "\(total) fans already in — don't miss it" }
-        return "Be first — lock a side before the room fills"
+        if heat >= 40 { return "Heat \(heat) - room is warming up" }
+        if total >= 5 { return "\(total) fans already in - don't miss it" }
+        return "Be first - lock a side before the room fills"
     }
 
     func parseCrowd(_ root: [String: Any]) -> CrowdInfo {
@@ -778,7 +778,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if side == "home" { c.h += 1 } else if side == "draw" { c.d += 1 } else { c.a += 1 }
         c.total = c.h + c.d + c.a
         c.lockingNow = max(1, c.lockingNow)
-        c.fomoLine = "You're in — \(c.lockingNow) locking now"
+        c.fomoLine = "You're in - \(c.lockingNow) locking now"
         crowdCache[fixtureId] = c
         _ = rebuildDashboard()
 
@@ -798,7 +798,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }.resume()
     }
 
-    // MARK: the native dashboard — TikTok × SportyBet 1X2 market
+    // MARK: the native dashboard - TikTok × SportyBet 1X2 market
 
     func rebuildDashboard() -> NSSize {
         expandedContent.subviews.forEach { $0.removeFromSuperview() }
@@ -808,7 +808,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         func favRank(_ m: MatchInfo) -> Int {
             (favorites.contains(m.home) ? 2 : 0) + (favorites.contains(m.away) ? 2 : 0) + (m.isLive ? 1 : 0)
         }
-        // Live + upcoming only — never pad the island with old FT fixtures.
+        // Live + upcoming only - never pad the island with old FT fixtures.
         let active = matchesCache.filter { $0.isNotchWorthy }
         let live = active.filter { $0.isLive }.sorted { favRank($0) > favRank($1) || $0.drama > $1.drama }
         let upcoming = active.filter { !$0.isLive }
@@ -886,7 +886,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             ?? shown.first(where: { $0.isLive })
             ?? shown.first
 
-        // Featured scoreboard — full width inside fillet
+        // Featured scoreboard - full width inside fillet
         y -= featuredH
         if let f = featured {
             fetchCrowd(fixtureId: f.fixtureId)
@@ -948,7 +948,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 ? NSColor(red: 1, green: 0.95, blue: 0.88, alpha: 1).cgColor
                 : NSColor(white: 0.96, alpha: 1).cgColor
             fomoBg.layer?.cornerRadius = 8
-            let fomoTxt = NSTextField(labelWithString: crowd?.fomoLine ?? "Be first — lock a side before the room fills")
+            let fomoTxt = NSTextField(labelWithString: crowd?.fomoLine ?? "Be first - lock a side before the room fills")
             fomoTxt.font = NSFont.systemFont(ofSize: 10, weight: .semibold)
             fomoTxt.textColor = hotFomo
                 ? NSColor(red: 0.55, green: 0.3, blue: 0.05, alpha: 1)
@@ -1347,7 +1347,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             pinnedUntil = .distantPast
         }
         guard let pick else {
-            // Nothing live/upcoming — idle compact state, clear FT leftovers
+            // Nothing live/upcoming - idle compact state, clear FT leftovers
             currentFixture = 0
             if label.stringValue != "Torq" { crossfadeLabel(to: "Torq") }
             barTrack.isHidden = true

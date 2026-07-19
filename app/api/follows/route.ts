@@ -21,7 +21,7 @@ function write(store: Store) {
   fs.writeFileSync(FILE, JSON.stringify(store));
 }
 
-/** GET /api/follows?id=xxxx — island + web sync for followed teams. */
+/** GET /api/follows?id=xxxx - island + web sync for followed teams. */
 export async function GET(req: NextRequest) {
   const id = req.nextUrl.searchParams.get("id")?.trim();
   if (!id || id.length < 4) {

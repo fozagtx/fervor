@@ -84,10 +84,10 @@ export default function MatchScreen({
   useEffect(() => {
     if (!match) return;
     document.title = isLive
-      ? `● LIVE ${match.scoreHome}–${match.scoreAway} · ${match.home} vs ${match.away} — Torq`
-      : `${match.home} vs ${match.away} — Torq`;
+      ? `● LIVE ${match.scoreHome}–${match.scoreAway} · ${match.home} vs ${match.away} - Torq`
+      : `${match.home} vs ${match.away} - Torq`;
     return () => {
-      document.title = "Torq — the heartbeat of the World Cup";
+      document.title = "Torq - the heartbeat of the World Cup";
     };
   }, [match, isLive, match?.scoreHome, match?.scoreAway]);
 

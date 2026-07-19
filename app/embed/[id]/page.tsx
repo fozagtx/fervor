@@ -10,7 +10,7 @@ import { useMatchStream } from "@/lib/useMatchStream";
 import { COLORS } from "@/components/WaveChart";
 
 /**
- * Streamer / TV embed — no chrome, iframe-safe, live river + score.
+ * Streamer / TV embed - no chrome, iframe-safe, live river + score.
  * Usage: <iframe src="https://torq.up.railway.app/embed/FIXTURE_ID" />
  */
 export default function EmbedPage() {

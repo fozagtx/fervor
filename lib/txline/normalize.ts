@@ -16,13 +16,13 @@ import type {
 export function isMatchWinnerMarket(odds: TxOddsPayload): boolean {
   if (odds.SuperOddsType !== "1X2_PARTICIPANT_RESULT") return false;
   // Period sub-markets ("half=1") appear in MarketParameters on the live
-  // stream but in MarketPeriod in the interval archive — exclude both.
+  // stream but in MarketPeriod in the interval archive - exclude both.
   if (odds.MarketParameters || odds.MarketPeriod) return false;
   return (odds.PriceNames?.length ?? 0) === 3;
 }
 
 /**
- * PriceNames for 1X2 are ["part1","draw","part2"] — participant order, not
+ * PriceNames for 1X2 are ["part1","draw","part2"] - participant order, not
  * home/away order. p1IsHome decides which side part1 belongs to.
  */
 export function oddsToProbPoint(

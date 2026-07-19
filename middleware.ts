@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 /**
  * /mini is popup-only. A normal browser tab hitting /mini/123
- * (no ?p=1) always goes to the full match page — never a stretched
+ * (no ?p=1) always goes to the full match page - never a stretched
  * scoreboard on a white void.
  */
 export function middleware(req: NextRequest) {

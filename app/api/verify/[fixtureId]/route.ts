@@ -262,7 +262,7 @@ export async function GET(
       );
     }
 
-    // Second proof: the final scoreline itself (best effort — some fixtures
+    // Second proof: the final scoreline itself (best effort - some fixtures
     // have no stat coverage; the fixture proof alone still stands)
     let score: Awaited<ReturnType<typeof proveScoreline>> = null;
     try {

@@ -25,16 +25,16 @@ function pct(n: number, total: number) {
   return Math.round((n / total) * 100);
 }
 
-/** SportyBet-style decimal “price” from win % — display only, no stake. */
+/** SportyBet-style decimal “price” from win % - display only, no stake. */
 function priceFromProb(prob: number | undefined): string {
-  if (prob == null || prob < 1) return "—";
+  if (prob == null || prob < 1) return "-";
   const d = Math.min(25, Math.max(1.01, 100 / prob));
   return d.toFixed(2);
 }
 
 /**
  * TikTok × SportyBet market slip: big 1X2 tiles + live FOMO.
- * Lock a free call — crowd heat + market prices. No money.
+ * Lock a free call - crowd heat + market prices. No money.
  */
 export default function MarketSlip({ match }: { match: MatchState }) {
   const [tallies, setTallies] = useState<Tallies>({
@@ -214,7 +214,7 @@ export default function MarketSlip({ match }: { match: MatchState }) {
                 {priceFromProb(prob)}
               </span>
               <span className="font-mono text-[10px] text-zinc-400">
-                {prob != null ? `${prob.toFixed(0)}% mkt` : "—"}
+                {prob != null ? `${prob.toFixed(0)}% mkt` : "-"}
               </span>
               {tallies.total > 0 && (
                 <span className="mt-0.5 rounded-full bg-white px-1.5 py-0.5 font-mono text-[9px] font-semibold text-zinc-500 ring-1 ring-zinc-200">
@@ -253,14 +253,14 @@ export default function MarketSlip({ match }: { match: MatchState }) {
               <span className="font-semibold text-zinc-800">{label(yours)}</span>
             </>
           ) : (
-            "Poll closed — you missed this one"
+            "Poll closed - you missed this one"
           )
         ) : justLocked ? (
-          <span className="font-semibold text-emerald-700">Locked in — don&apos;t miss the next swing</span>
+          <span className="font-semibold text-emerald-700">Locked in - don&apos;t miss the next swing</span>
         ) : yours ? (
           crowdFav && yours !== crowdFav && tallies.total >= 5 ? (
             <>
-              FOMO check — you&apos;re fading{" "}
+              FOMO check - you&apos;re fading{" "}
               <span className="font-semibold text-amber-700">
                 {pct(tallies[crowdFav], tallies.total)}%
               </span>{" "}
@@ -274,7 +274,7 @@ export default function MarketSlip({ match }: { match: MatchState }) {
           )
         ) : tallies.lockingNow > 0 ? (
           <span className="font-semibold text-amber-700">
-            {tallies.lockingNow} locking now — jump in
+            {tallies.lockingNow} locking now - jump in
           </span>
         ) : (
           "Tap a side before the room runs away"

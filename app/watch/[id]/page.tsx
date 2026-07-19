@@ -9,7 +9,7 @@ import MatchScreen from "@/components/MatchScreen";
 import { useFavorites } from "@/lib/favorites";
 
 /**
- * "Watch with me" landing — applies shared team follows from the link,
+ * "Watch with me" landing - applies shared team follows from the link,
  * then opens the live (or replay) match with a together banner.
  */
 function WatchInner() {

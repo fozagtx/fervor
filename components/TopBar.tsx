@@ -68,7 +68,7 @@ export default function TopBar({
             size="sm"
             variant="bordered"
             className="cursor-pointer border-default-300 font-mono text-default-600"
-            title="Mac island sync — click to copy, then Torq menu → Paste Follow Sync Code"
+            title="Mac island sync - click to copy, then Torq menu → Paste Follow Sync Code"
             onClick={copyFollowId}
           >
             <span className="flex items-center gap-1">

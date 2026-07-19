@@ -1,8 +1,8 @@
 # Torq
 
-A live World Cup **second-screen** app on [TxLINE](https://txline.txodds.com) consensus odds and Solana **TxOracle** — plus a **macOS Dynamic Island / notch companion** for live scores and win% without leaving your desktop.
+A live World Cup **second-screen** app on [TxLINE](https://txline.txodds.com) consensus odds and Solana **TxOracle** - plus a **macOS Dynamic Island / notch companion** for live scores and win% without leaving your desktop.
 
-Fans watch a win-probability **wave**, **Drama Score**, market-shift moments, **Beat the Market** (skill calls — no wagering), full replays, and one-tap on-chain score proof. No betting, no sign-up, no crypto required.
+Fans watch a win-probability **wave**, **Drama Score**, market-shift moments, **Beat the Market** (skill calls - no wagering), full replays, and one-tap on-chain score proof. No betting, no sign-up, no crypto required.
 
 | | |
 |---|---|
@@ -11,15 +11,15 @@ Fans watch a win-probability **wave**, **Drama Score**, market-shift moments, **
 | **Repo** | https://github.com/fozagtx/fervor |
 | **Track** | TxODDS · Consumer & Fan Experiences |
 
-> First second-screen that combines consensus-odds Drama Score + a playable mini-game + verifiable outcomes — without betting. Ships with a native **Mac notch** app.
+> First second-screen that combines consensus-odds Drama Score + a playable mini-game + verifiable outcomes - without betting. Ships with a native **Mac notch** app.
 
 ## How It Works
 
-1. **Server auth** — guest JWT → on-chain `subscribe` → API token (fans never see this).
-2. **Hub** — TxLINE odds + scores SSE → normalize, record, fan out over one browser SSE.
-3. **Wave** — demargined `Pct` → live home/draw/away win %.
-4. **Play** — Beat the Market calls settle against the feed; moments + GoalBlast on big moves.
-5. **Replay / proof** — same pipeline at 10×–60×; TxOracle verifies fixture + final score.
+1. **Server auth** - guest JWT → on-chain `subscribe` → API token (fans never see this).
+2. **Hub** - TxLINE odds + scores SSE → normalize, record, fan out over one browser SSE.
+3. **Wave** - demargined `Pct` → live home/draw/away win %.
+4. **Play** - Beat the Market calls settle against the feed; moments + GoalBlast on big moves.
+5. **Replay / proof** - same pipeline at 10×–60×; TxOracle verifies fixture + final score.
 
 TxLINE endpoints + API feedback → [`docs/txline.md`](docs/txline.md)
 
@@ -36,13 +36,16 @@ TxLINE endpoints + API feedback → [`docs/txline.md`](docs/txline.md)
 
 ## Screenshots
 
-| Feed | Match |
-|---|---|
-| ![Feed](docs/screenshots/landing.png) | ![Match](docs/screenshots/match-story.png) |
+<p align="center">
+  <img src="docs/screenshots/feed.png" width="220" alt="Feed - Spain vs Argentina market reel" />
+  <img src="docs/screenshots/match.png" width="220" alt="Match - live 1X2 and win probability" />
+  <img src="docs/screenshots/replay-live.png" width="220" alt="Replay - England vs Argentina replaying" />
+  <img src="docs/screenshots/fulltime.png" width="220" alt="Full-time - France 4-6 England" />
+</p>
 
-| Replay | Full-time |
-|---|---|
-| ![Replay](docs/screenshots/replay.png) | ![Full-time](docs/screenshots/lobby.png) |
+| Feed | Match | Replay | Full-time |
+|---|---|---|---|
+| Home market reel | 1X2 + wave | 10x/30x/60x | FT recap + Replay |
 
 ## Quick Start
 
@@ -57,7 +60,7 @@ Live smoke: `pnpm smoke`
 
 ## Mac notch companion
 
-Torq includes a native **macOS Dynamic Island / menu-bar notch** app — same live TxLINE feed as the website (scores, win%, expand on hover).
+Torq includes a native **macOS Dynamic Island / menu-bar notch** app - same live TxLINE feed as the website (scores, win%, expand on hover).
 
 | | |
 |---|---|

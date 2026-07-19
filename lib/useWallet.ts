@@ -20,7 +20,7 @@ const TRUSTED_KEY = "torq-wallet-trusted";
 
 /**
  * Minimal optional wallet connection (Phantom or any injected Solana
- * provider). Used only as an identity to save the fan's call record —
+ * provider). Used only as an identity to save the fan's call record -
  * never for transactions.
  */
 export function useWallet() {

@@ -205,7 +205,7 @@ async function subscribeAndActivate(jwt: string): Promise<AuthCache> {
     else if (parsed && typeof parsed === "object" && typeof parsed.token === "string")
       apiToken = parsed.token;
   } catch {
-    // raw text token — already handled
+    // raw text token - already handled
   }
   if (!apiToken || apiToken === "null") {
     throw new Error(`activation returned no token (body: ${raw.slice(0, 120)})`);

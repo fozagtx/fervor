@@ -3,7 +3,7 @@
 import { Button } from "@heroui/react";
 import { Icon } from "@iconify/react";
 
-/** Public DMG from the GitHub release — same link as README / macos docs. */
+/** Public DMG from the GitHub release - same link as README / macos docs. */
 export const MAC_DMG_URL =
   "https://github.com/fozagtx/fervor/releases/download/torq-mac/Torq.dmg";
 
