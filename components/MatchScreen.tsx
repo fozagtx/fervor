@@ -5,6 +5,7 @@ import { Icon } from "@iconify/react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import TopBar from "@/components/TopBar";
+import { MacAppBanner } from "@/components/MacAppButton";
 import ScoreHeader from "@/components/ScoreHeader";
 import MarketSlip from "@/components/MarketSlip";
 import WaveChart from "@/components/WaveChart";
@@ -94,6 +95,7 @@ export default function MatchScreen({
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-6 sm:px-6 sm:py-10">
       <TopBar live={isLive} connected={connected} />
+      <MacAppBanner />
 
       {!match ? (
         <Card shadow="sm" className="border-small border-default-200">

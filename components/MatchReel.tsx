@@ -13,7 +13,7 @@ import type { MatchState, ProbPoint, MatchEvent } from "@/lib/txline/types";
 import DramaMeter from "./DramaMeter";
 import Flag from "./Flag";
 import Logo from "./Logo";
-import MacAppButton, { MAC_DMG_URL } from "./MacAppButton";
+import MacAppButton, { MacAppBanner } from "./MacAppButton";
 import MarketSlip from "./MarketSlip";
 import MuteButton from "./MuteButton";
 import ThemeToggle from "./ThemeToggle";
@@ -95,22 +95,6 @@ export default function MatchReel() {
         </div>
       </header>
 
-      {/* Mac notch CTA - always visible under the header on the reel */}
-      <div className="pointer-events-none fixed inset-x-0 top-[max(3.4rem,calc(env(safe-area-inset-top)+2.75rem))] z-30 flex justify-center px-3">
-        <a
-          href={MAC_DMG_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="pointer-events-auto flex max-w-md items-center gap-2 rounded-full border border-zinc-200 bg-white/95 px-3 py-1.5 text-tiny text-zinc-700 shadow-sm backdrop-blur-sm transition hover:border-zinc-300 hover:bg-white"
-        >
-          <Icon icon="solar:laptop-minimalistic-bold" width={14} className="shrink-0 text-zinc-500" />
-          <span className="font-medium">
-            Mac: live scores in the notch
-          </span>
-          <span className="font-semibold text-emerald-700">Download free →</span>
-        </a>
-      </div>
-
       {!connected && reel.length === 0 && (
         <section className="flex h-dvh w-full snap-start snap-always flex-col items-center justify-center gap-4 bg-white px-6">
           <Skeleton className="h-10 w-40 rounded-full" />
@@ -128,15 +112,19 @@ export default function MatchReel() {
         </section>
       )}
 
-      {reel.length > 0 && (
-        <div className="pointer-events-none fixed inset-x-0 bottom-3 z-40 flex justify-center px-3">
+      {/* Mac download - fixed above the swipe hint so it is always on screen */}
+      <div className="pointer-events-none fixed inset-x-0 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-50 flex flex-col items-center gap-2 px-3">
+        <div className="pointer-events-auto w-full max-w-md">
+          <MacAppBanner />
+        </div>
+        {reel.length > 0 && (
           <p className="rounded-full border border-zinc-200 bg-white/95 px-3 py-1 font-mono text-[10px] font-semibold text-zinc-600 shadow-sm">
             {remaining > 0
               ? `${remaining} remaining · swipe up for next`
               : `${reel.length} replays · swipe up`}
           </p>
-        </div>
-      )}
+        )}
+      </div>
 
       {reel.map((m, i) => (
         <ReelSlide
@@ -206,7 +194,7 @@ function ReelSlide({
   const hasWave = display.probs.length > 2;
 
   return (
-    <section className="relative flex h-dvh w-full snap-start snap-always flex-col bg-white px-3 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[4.5rem]">
+    <section className="relative flex h-dvh w-full snap-start snap-always flex-col bg-white px-3 pb-[max(7.5rem,calc(env(safe-area-inset-bottom)+6.5rem))] pt-[4.5rem]">
       <div className="mx-auto flex h-full w-full max-w-lg flex-col pr-12">
         <div
           className="reel-enter mb-2 flex items-center justify-between gap-2"
@@ -300,7 +288,7 @@ function ReelSlide({
       </div>
 
       {/* TikTok side rail */}
-      <aside className="absolute bottom-[max(5.5rem,calc(env(safe-area-inset-bottom)+4.5rem))] right-2 z-20 flex flex-col items-center gap-3">
+      <aside className="absolute bottom-[max(8.5rem,calc(env(safe-area-inset-bottom)+7.5rem))] right-2 z-20 flex flex-col items-center gap-3">
         <RailBtn
           label="Star"
           onPress={() => onToggleFavorite(match.home)}
