@@ -49,7 +49,7 @@ downstream distribution for TxLINE itself."
 ## 4:30–4:50 — Close
 Screen: home page + URL on screen.
 Line: "Torq. Every match has a heartbeat — now you can feel it.
-Live at fervor.up.railway.app, built on TxLINE."
+Live at https://torq.up.railway.app/, built on TxLINE."
 
 ## Shot checklist
 - [ ] Pundit voice audible on a goal

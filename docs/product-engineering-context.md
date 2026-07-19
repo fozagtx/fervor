@@ -155,7 +155,7 @@ Record that. Submission text second. No new features after kickoff unless the st
 **Aha:** The green line lurches before the replay on TV finishes — “oh, that’s the game.”
 
 **Click path (≤90s)**
-1. Open fervor.up.railway.app  
+1. Open https://torq.up.railway.app/
 2. Tap France vs England (or Replay if pre-KO)  
 3. Point at the wave; wait for/trigger a moment  
 4. GoalBlast or market shift + optional Beat call  
