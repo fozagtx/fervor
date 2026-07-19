@@ -1,8 +1,8 @@
 # Torq
 
-A live World Cup **second-screen** app on [TxLINE](https://txline.txodds.com) consensus odds and Solana **TxOracle** - plus a **macOS Dynamic Island / notch companion** for live scores and win% without leaving your desktop.
+World Cup second screen on [TxLINE](https://txline.txodds.com) consensus odds and Solana **TxOracle**, plus a **macOS Dynamic Island / notch** companion for live scores and win%.
 
-Fans watch a win-probability **wave**, **Drama Score**, market-shift moments, **Beat the Market** (skill calls - no wagering), full replays, and one-tap on-chain score proof. No betting, no sign-up, no crypto required.
+Watch the win-probability **wave**, **Drama Score**, market-shift moments, **Beat the Market** skill calls, full match replays, and one-tap on-chain score proof. Free to open. Guest mode by default. Wallet optional for identity.
 
 | | |
 |---|---|
@@ -11,11 +11,11 @@ Fans watch a win-probability **wave**, **Drama Score**, market-shift moments, **
 | **Repo** | https://github.com/fozagtx/fervor |
 | **Track** | TxODDS · Consumer & Fan Experiences |
 
-> First second-screen that combines consensus-odds Drama Score + a playable mini-game + verifiable outcomes - without betting. Ships with a native **Mac notch** app.
+> Consensus-odds Drama Score, a playable mini-game, and verifiable outcomes in one fan app. Ships with a native **Mac notch** companion.
 
 ## How It Works
 
-1. **Server auth** - guest JWT → on-chain `subscribe` → API token (fans never see this).
+1. **Server auth** - guest JWT → on-chain `subscribe` → API token (handled server-side).
 2. **Hub** - TxLINE odds + scores SSE → normalize, record, fan out over one browser SSE.
 3. **Wave** - demargined `Pct` → live home/draw/away win %.
 4. **Play** - Beat the Market calls settle against the feed; moments + GoalBlast on big moves.
@@ -60,7 +60,7 @@ Live smoke: `pnpm smoke`
 
 ## Mac notch companion
 
-Torq includes a native **macOS Dynamic Island / menu-bar notch** app - same live TxLINE feed as the website (scores, win%, expand on hover).
+Native **macOS Dynamic Island / menu-bar notch** app. Same live TxLINE feed as the site: scores, win%, expand on hover.
 
 | | |
 |---|---|
@@ -75,7 +75,7 @@ Torq includes a native **macOS Dynamic Island / menu-bar notch** app - same live
 - Beat the Market streaks · Who wins crowd · Moments feed  
 - Replay 10×/30×/60× · Pundit TTS · FT recap + share  
 - On-chain score proof · PWA · `/embed` · `/watch`  
-- **macOS Dynamic Island / notch companion** (DMG download above)  
+- **macOS Dynamic Island / notch companion** (DMG above)  
 
 ## Docs
 
