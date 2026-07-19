@@ -4,15 +4,16 @@ import { Button, Chip, Skeleton } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { dramaScore } from "@/lib/drama";
 import { useCountdown, useFavorites } from "@/lib/favorites";
 import { shareWatch } from "@/lib/share";
 import { useMatchStream } from "@/lib/useMatchStream";
-import type { MatchState } from "@/lib/txline/types";
+import type { MatchState, ProbPoint, MatchEvent } from "@/lib/txline/types";
 import DramaMeter from "./DramaMeter";
 import Flag from "./Flag";
 import Logo from "./Logo";
+import MacAppButton, { MAC_DMG_URL } from "./MacAppButton";
 import MarketSlip from "./MarketSlip";
 import MuteButton from "./MuteButton";
 import ThemeToggle from "./ThemeToggle";
@@ -23,6 +24,19 @@ function bucket(m: MatchState): "live" | "upcoming" | "finished" {
   if (/(ft|full|final|ended|finish)/.test(g)) return "finished";
   if (/(sched|not|pre|await)/.test(g)) return "upcoming";
   return "live";
+}
+
+/** Drop stale “Scheduled” rows and ancient FT so remaining fixtures actually surface. */
+function reelWorthy(m: MatchState, now = Date.now()): boolean {
+  const b = bucket(m);
+  if (b === "live") return true;
+  if (b === "upcoming") {
+    if (m.startTime > 0 && m.startTime < now - 2 * 3600_000) return false; // KO long gone
+    if (m.startTime > now + 14 * 24 * 3600_000) return false; // too far out
+    return true;
+  }
+  // Keep recent FT for replay — not the whole archive
+  return m.startTime > now - 5 * 24 * 3600_000;
 }
 
 function sortReel(matches: MatchState[], favorites: string[]) {
@@ -36,19 +50,23 @@ function sortReel(matches: MatchState[], favorites: string[]) {
   return [...matches].sort((a, b) => {
     const d = score(b) - score(a);
     if (d !== 0) return d;
-    if (bucket(a) === "upcoming") return a.startTime - b.startTime;
+    if (bucket(a) === "upcoming" && bucket(b) === "upcoming") {
+      return a.startTime - b.startTime;
+    }
     return b.startTime - a.startTime;
   });
 }
 
 /** TikTok feed × SportyBet 1X2 slip — white stage, one market per swipe. */
 export default function MatchReel() {
-  const { matches, connected } = useMatchStream();
+  const { matches, connected, revision } = useMatchStream();
   const { favorites, toggle } = useFavorites();
-  const reel = useMemo(
-    () => sortReel([...matches.values()], favorites),
-    [matches, favorites]
-  );
+  // `revision` must be a dep — matches Map ref is stable while contents update.
+  const reel = useMemo(() => {
+    const worth = [...matches.values()].filter((m) => reelWorthy(m));
+    return sortReel(worth, favorites);
+  }, [matches, favorites, revision]);
+  const remaining = reel.filter((m) => bucket(m) !== "finished").length;
 
   return (
     <main className="h-dvh snap-y snap-mandatory overflow-y-auto overscroll-y-contain bg-white [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -56,11 +74,12 @@ export default function MatchReel() {
         <Link
           href="/"
           aria-label="Torq home"
-          className="pointer-events-auto flex items-center rounded-full border border-zinc-200 bg-white/95 p-1.5 shadow-sm"
+          className="pointer-events-auto flex items-center gap-2 rounded-full border border-zinc-200 bg-white/95 py-1.5 pl-1.5 pr-3.5 shadow-sm"
         >
-          <Logo size={28} />
+          <Logo size={30} showName />
         </Link>
         <div className="pointer-events-auto flex items-center gap-0.5 rounded-full border border-zinc-200 bg-white/95 p-1 shadow-sm">
+          <MacAppButton compact />
           <MuteButton />
           <ThemeToggle />
           <Button
@@ -75,6 +94,22 @@ export default function MatchReel() {
           </Button>
         </div>
       </header>
+
+      {/* Mac notch CTA — always visible under the header on the reel */}
+      <div className="pointer-events-none fixed inset-x-0 top-[max(3.4rem,calc(env(safe-area-inset-top)+2.75rem))] z-30 flex justify-center px-3">
+        <a
+          href={MAC_DMG_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="pointer-events-auto flex max-w-md items-center gap-2 rounded-full border border-zinc-200 bg-white/95 px-3 py-1.5 text-tiny text-zinc-700 shadow-sm backdrop-blur-sm transition hover:border-zinc-300 hover:bg-white"
+        >
+          <Icon icon="solar:laptop-minimalistic-bold" width={14} className="shrink-0 text-zinc-500" />
+          <span className="font-medium">
+            Mac: live scores in the notch
+          </span>
+          <span className="font-semibold text-emerald-700">Download free →</span>
+        </a>
+      </div>
 
       {!connected && reel.length === 0 && (
         <section className="flex h-dvh w-full snap-start snap-always flex-col items-center justify-center gap-4 bg-white px-6">
@@ -93,13 +128,23 @@ export default function MatchReel() {
         </section>
       )}
 
+      {reel.length > 0 && (
+        <div className="pointer-events-none fixed inset-x-0 bottom-3 z-40 flex justify-center px-3">
+          <p className="rounded-full border border-zinc-200 bg-white/95 px-3 py-1 font-mono text-[10px] font-semibold text-zinc-600 shadow-sm">
+            {remaining > 0
+              ? `${remaining} remaining · swipe up for next`
+              : `${reel.length} replays · swipe up`}
+          </p>
+        </div>
+      )}
+
       {reel.map((m, i) => (
         <ReelSlide
           key={m.fixtureId}
           match={m}
           favorites={favorites}
           onToggleFavorite={toggle}
-          showHint={i === 0}
+          showHint={i === 0 && reel.length > 1}
           index={i}
           total={reel.length}
         />
@@ -130,10 +175,43 @@ function ReelSlide({
   const href = finished ? `/match/${match.fixtureId}?replay=1` : `/match/${match.fixtureId}`;
   const starred = favorites.includes(match.home) || favorites.includes(match.away);
 
+  // FT stream buffer is often empty — pull recorded wave so we show it before recap/replay.
+  const [wave, setWave] = useState<{
+    probs: ProbPoint[];
+    events: MatchEvent[];
+  } | null>(null);
+  useEffect(() => {
+    if (!finished || match.probs.length > 5) {
+      setWave(null);
+      return;
+    }
+    let stale = false;
+    fetch(`/api/history/${match.fixtureId}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((h) => {
+        if (!stale && h?.probs?.length > 5) {
+          setWave({ probs: h.probs, events: h.events ?? match.events });
+        }
+      })
+      .catch(() => {});
+    return () => {
+      stale = true;
+    };
+  }, [finished, match.fixtureId, match.probs.length, match.events]);
+
+  const display: MatchState =
+    wave && match.probs.length <= 5
+      ? { ...match, probs: wave.probs, events: wave.events }
+      : match;
+  const hasWave = display.probs.length > 2;
+
   return (
     <section className="relative flex h-dvh w-full snap-start snap-always flex-col bg-white px-3 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[4.5rem]">
       <div className="mx-auto flex h-full w-full max-w-lg flex-col pr-12">
-        <div className="mb-2 flex items-center justify-between gap-2">
+        <div
+          className="reel-enter mb-2 flex items-center justify-between gap-2"
+          style={{ ["--stagger" as string]: "0ms" }}
+        >
           <StatusChip live={live} finished={finished} match={match} countdown={countdown} />
           <div className="flex items-center gap-2">
             {live && <DramaMeter score={dramaScore(match)} compact />}
@@ -147,7 +225,8 @@ function ReelSlide({
         <button
           type="button"
           onClick={() => router.push(href)}
-          className="mb-3 grid w-full grid-cols-[1fr_auto_1fr] items-center gap-2 text-left active:scale-[0.99]"
+          className="pressable reel-enter mb-3 grid w-full grid-cols-[1fr_auto_1fr] items-center gap-2 text-left"
+          style={{ ["--stagger" as string]: "40ms" }}
         >
           <div className="flex min-w-0 flex-col items-center gap-1.5">
             <Flag team={match.home} size="xl" />
@@ -180,21 +259,29 @@ function ReelSlide({
         </button>
 
         {/* Hero: SportyBet-style 1X2 slip */}
-        <div className="mb-2 shrink-0">
-          <MarketSlip match={match} />
+        <div className="reel-enter mb-2 shrink-0" style={{ ["--stagger" as string]: "80ms" }}>
+          <MarketSlip match={display} />
         </div>
 
-        {/* Compact wave proof */}
-        <div className="mb-2 min-h-0 flex-1 overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50/80 px-1 pt-1">
-          {match.probs.length > 2 ? (
+        {/* Compact wave — shown for FT before opening full recap / replay */}
+        <div
+          className="reel-enter mb-2 min-h-0 flex-1 overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50/80 px-1 pt-1"
+          style={{ ["--stagger" as string]: "120ms" }}
+        >
+          {hasWave ? (
             <div className="h-full min-h-[100px] [&_svg]:h-full [&_svg]:max-h-[160px] [&_svg]:w-full">
-              <WaveChart probs={match.probs} events={match.events} home={match.home} away={match.away} />
+              <WaveChart
+                probs={display.probs}
+                events={display.events}
+                home={display.home}
+                away={display.away}
+              />
             </div>
           ) : (
             <div className="flex h-full min-h-[100px] flex-col items-center justify-center gap-1 px-4 text-center">
               <Icon icon="solar:soundwave-bold-duotone" className="text-zinc-300" width={26} />
               <p className="text-tiny text-zinc-400">
-                {finished ? "Open replay for the full wave" : "Live prices open nearer kick-off"}
+                {finished ? "Loading match wave…" : "Live prices open nearer kick-off"}
               </p>
             </div>
           )}
@@ -203,7 +290,8 @@ function ReelSlide({
         <Button
           color="primary"
           radius="full"
-          className="h-11 shrink-0 font-semibold"
+          className="pressable reel-enter h-11 shrink-0 font-semibold"
+          style={{ ["--stagger" as string]: "160ms" }}
           startContent={<Icon icon={finished ? "solar:play-bold" : "solar:eye-bold"} width={18} />}
           onPress={() => router.push(href)}
         >
@@ -218,16 +306,19 @@ function ReelSlide({
           onPress={() => onToggleFavorite(match.home)}
           icon={starred ? "solar:star-bold" : "solar:star-linear"}
           accent={starred}
+          delay={100}
         />
         <RailBtn
           label="Share"
           onPress={() => void shareWatch(match)}
           icon="solar:share-bold"
+          delay={140}
         />
         <RailBtn
           label={finished ? "Replay" : "Open"}
           onPress={() => router.push(href)}
           icon={finished ? "solar:play-bold" : "solar:arrow-right-up-bold"}
+          delay={180}
         />
       </aside>
 
@@ -246,17 +337,20 @@ function RailBtn({
   icon,
   onPress,
   accent,
+  delay = 0,
 }: {
   label: string;
   icon: string;
   onPress: () => void;
   accent?: boolean;
+  delay?: number;
 }) {
   return (
     <button
       type="button"
       onClick={onPress}
-      className="flex flex-col items-center gap-0.5 active:scale-90"
+      className="pressable reel-enter flex flex-col items-center gap-0.5"
+      style={{ ["--stagger" as string]: `${delay}ms` }}
     >
       <span className="flex h-11 w-11 items-center justify-center rounded-full border border-zinc-200 bg-white shadow-sm">
         <Icon icon={icon} width={20} className={accent ? "text-amber-500" : "text-zinc-800"} />

@@ -2,7 +2,7 @@
 
 **Generated:** 2026-07-18  
 **Track:** TxODDS Consumer & Fan Experiences (World Cup)  
-**Live:** https://fervor.up.railway.app · repo: github.com/fozagtx/fervor  
+**Live:** https://torq.up.railway.app · repo: github.com/fozagtx/fervor  
 **Methods used:** BPFG Hackathon OS · Build-DeFi (integrate-vs-build) · Colosseum Copilot *(token missing — landscape from session evidence)*
 
 ---
@@ -197,8 +197,5 @@ To unlock winner/gap tables from 5,400+ Solana hackathon projects:
 | Artifact | Path |
 |---|---|
 | This profile | `docs/product-engineering-context.md` |
-| BPFG commission | `bpfg/COMMISSION.md` |
-| Demo spine | `bpfg/DEMO_SPINE.md` |
-| Insight bank | `bpfg/INSIGHT_BANK.md` |
 | Submission notes | `docs/submission.md` |
-| Idea handoff | `.superstack/idea-context.md` |
+| Demo script | `docs/demo-script.md` |

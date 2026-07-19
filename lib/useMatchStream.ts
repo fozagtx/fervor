@@ -13,6 +13,8 @@ export interface StreamState {
   matches: Map<number, MatchState>;
   connected: boolean;
   replayDone: boolean;
+  /** Increments on every stream update — use in useMemo deps (Map ref is stable). */
+  revision: number;
 }
 
 const MAX_CLIENT_POINTS = 4000;
@@ -21,8 +23,32 @@ export function useMatchStream(opts: StreamOptions = {}) {
   const { fixtureId, replay, speed } = opts;
   const [connected, setConnected] = useState(false);
   const [replayDone, setReplayDone] = useState(false);
-  const [, bump] = useState(0);
+  const [revision, setRevision] = useState(0);
   const matchesRef = useRef<Map<number, MatchState>>(new Map());
+
+  // Lobby: hydrate from REST immediately so remaining matches show before SSE.
+  useEffect(() => {
+    if (fixtureId || replay) return;
+    let cancelled = false;
+    fetch("/api/matches")
+      .then((r) => r.json())
+      .then((data: { matches?: MatchState[] }) => {
+        if (cancelled || !Array.isArray(data.matches)) return;
+        const matches = matchesRef.current;
+        for (const m of data.matches) {
+          const prev = matches.get(m.fixtureId);
+          // Don't clobber a richer live buffer already streamed in
+          if (prev && prev.probs.length > (m.probs?.length ?? 0)) continue;
+          matches.set(m.fixtureId, m);
+        }
+        setConnected(true);
+        setRevision((n) => n + 1);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [fixtureId, replay]);
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -45,8 +71,19 @@ export function useMatchStream(opts: StreamOptions = {}) {
       }
       switch (msg.type) {
         case "init":
-          matches.clear();
-          for (const m of msg.matches) matches.set(m.fixtureId, m);
+          // Merge — don't wipe REST hydrate if stream payload is thinner
+          for (const m of msg.matches) {
+            const prev = matches.get(m.fixtureId);
+            if (prev && prev.probs.length > m.probs.length && prev.gameState === m.gameState) {
+              matches.set(m.fixtureId, {
+                ...m,
+                probs: prev.probs,
+                events: prev.events.length >= m.events.length ? prev.events : m.events,
+              });
+            } else {
+              matches.set(m.fixtureId, m);
+            }
+          }
           break;
         case "prob": {
           const m = matches.get(msg.fixtureId);
@@ -81,7 +118,7 @@ export function useMatchStream(opts: StreamOptions = {}) {
         case "heartbeat":
           return;
       }
-      bump((n) => n + 1);
+      setRevision((n) => n + 1);
     };
 
     return () => {
@@ -96,5 +133,6 @@ export function useMatchStream(opts: StreamOptions = {}) {
     matches: matchesRef.current,
     connected,
     replayDone,
+    revision,
   };
 }

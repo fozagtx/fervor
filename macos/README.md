@@ -1,6 +1,6 @@
 # Torq for Mac (notch / Dynamic Island)
 
-Live World Cup scores + win% in the menu-bar notch. Reads the same public API as the site: https://fervor.up.railway.app
+Live World Cup scores + win% in the menu-bar notch. Reads the same public API as the site: https://torq.up.railway.app
 
 ## Direct download (DMG)
 

@@ -183,7 +183,7 @@ export default function MarketSlip({ match }: { match: MatchState }) {
                 e.stopPropagation();
                 vote(side);
               }}
-              className={`relative flex flex-col items-center gap-0.5 rounded-xl border-2 px-1.5 py-3 transition-all active:scale-[0.97] ${
+              className={`relative flex flex-col items-center gap-0.5 rounded-xl border-2 px-1.5 py-3 transition-[transform,border-color,background-color,box-shadow] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] ${
                 selected
                   ? "border-emerald-500 bg-emerald-50 shadow-[0_0_0_3px_rgba(16,185,129,0.15)]"
                   : trending
@@ -228,11 +228,11 @@ export default function MarketSlip({ match }: { match: MatchState }) {
 
       <div className="flex h-1.5 overflow-hidden rounded-full bg-zinc-100">
         <div
-          className="transition-all duration-500"
+          className="transition-[width] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)]"
           style={{ width: `${pct(tallies.home, tallies.total)}%`, background: COLORS.home }}
         />
         <div
-          className="transition-all duration-500"
+          className="transition-[width] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)]"
           style={{
             width: `${pct(tallies.draw, tallies.total)}%`,
             background: COLORS.draw,
@@ -240,7 +240,7 @@ export default function MarketSlip({ match }: { match: MatchState }) {
           }}
         />
         <div
-          className="transition-all duration-500"
+          className="transition-[width] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)]"
           style={{ width: `${pct(tallies.away, tallies.total)}%`, background: COLORS.away }}
         />
       </div>

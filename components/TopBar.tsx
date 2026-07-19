@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useFavorites } from "@/lib/favorites";
 import Logo from "./Logo";
+import MacAppButton from "./MacAppButton";
 import MuteButton from "./MuteButton";
 import ThemeToggle from "./ThemeToggle";
 import WalletButton from "./WalletButton";
@@ -43,7 +44,7 @@ export default function TopBar({
   return (
     <div className="flex items-center justify-between rounded-large border-small border-default-200 bg-content1 px-4 py-3 shadow-sm">
       <Link href="/" className="flex shrink-0 items-center" aria-label="Torq home">
-        <Logo size={38} />
+        <Logo size={38} showName />
       </Link>
       <div className="flex shrink-0 items-center gap-1.5">
         {showOffline ? (
@@ -66,16 +67,17 @@ export default function TopBar({
           <Chip
             size="sm"
             variant="bordered"
-            className="hidden cursor-pointer border-default-300 font-mono text-default-500 sm:flex"
-            title="Island sync code — paste this in the macOS menu"
+            className="cursor-pointer border-default-300 font-mono text-default-600"
+            title="Mac island sync — click to copy, then Torq menu → Paste Follow Sync Code"
             onClick={copyFollowId}
           >
             <span className="flex items-center gap-1">
               <Icon icon="solar:star-bold" width={12} className={favorites.length ? "text-warning" : ""} />
-              {copied ? "copied" : followId}
+              {copied ? "copied" : `sync ${followId}`}
             </span>
           </Chip>
         )}
+        <MacAppButton compact />
         <WalletButton />
         <MuteButton />
         <ThemeToggle />

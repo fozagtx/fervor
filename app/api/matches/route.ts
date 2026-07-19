@@ -23,23 +23,27 @@ export async function GET(req: NextRequest) {
     let seriesSource = m.probs;
 
     // Finished fixtures often have an empty live buffer — hydrate from recordings
-    // so the lobby / island can show the wave and "Replay" is obviously available.
+    // so the lobby / island can show the wave before replay / recap.
     if (isFinished(m) && m.probs.length < 8) {
       const history = historyFor(m);
       if (history && history.probs.length > 0) {
         seriesSource = history.probs;
-        probs = history.probs.slice(-1);
         events = history.events;
       }
     }
 
-    const stride = Math.max(1, Math.ceil(seriesSource.length / 40));
+    const stride = Math.max(1, Math.ceil(seriesSource.length / 80));
+    const wave = seriesSource.filter(
+      (_, i) => i % stride === 0 || i === seriesSource.length - 1
+    );
+    // Prefer the wave series as probs so clients render the chart without a second fetch.
+    probs = wave.length > 0 ? wave : probs;
     const enriched: MatchState = { ...m, probs: seriesSource, events };
     return {
       ...m,
       drama: dramaScore(enriched),
       probs,
-      series: seriesSource.filter((_, i) => i % stride === 0 || i === seriesSource.length - 1),
+      series: wave,
       events: events.slice(-5),
       replayable: isFinished(m) && seriesSource.length > 5,
     };

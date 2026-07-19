@@ -2,7 +2,7 @@
 
 **Track:** TxODDS Consumer and Fan Experiences (World Cup Track)
 
-**Live MVP (verified):** https://fervor.up.railway.app  
+**Live MVP (verified):** https://torq.up.railway.app  
 
 > **Originality:** First second-screen that combines consensus-odds **Drama Score** + a playable **Beat the Market** mini-game + **verifiable on-chain outcomes** — without requiring betting.
 
@@ -12,9 +12,9 @@ X / Tweet fields omitted (none). Demo video URL still TBD (you record).
 
 | Field | Value |
 |---|---|
-| Link to Your Submission | https://fervor.up.railway.app |
+| Link to Your Submission | https://torq.up.railway.app |
 | Project Title | Torq |
-| Live MVP | https://fervor.up.railway.app |
+| Live MVP | https://torq.up.railway.app |
 | Demo Video | _TBD — your Loom/YouTube_ |
 | Repository | https://github.com/fozagtx/fervor |
 | Technical Documentation | https://github.com/fozagtx/fervor/blob/main/README.md · [TxLINE notes](txline.md) · this file |
@@ -27,7 +27,7 @@ Torq is a World Cup second-screen app for fans with a phone in hand. It turns Tx
 
 **TxLINE experience:** paste from [`docs/txline.md`](txline.md) → *API feedback*.
 
-**Anything Else?** macOS island (`macos/`), embed `/embed/[id]`, watch links `/watch/[id]`, PWA install, demo script `claudedocs/demo-script.md`, live smoke `pnpm smoke`.
+**Anything Else?** macOS island (`macos/`), embed `/embed/[id]`, watch links `/watch/[id]`, PWA install, demo script [`docs/demo-script.md`](demo-script.md), live smoke `pnpm smoke`.
 
 ## Core idea
 

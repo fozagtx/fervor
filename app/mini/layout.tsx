@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-/** No app chrome — just the scoreboard. */
+/** Popup shell only — full tabs never reach here (middleware redirects). */
 export default function MiniLayout({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }

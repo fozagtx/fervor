@@ -11,7 +11,7 @@ import { COLORS } from "@/components/WaveChart";
 
 /**
  * Streamer / TV embed — no chrome, iframe-safe, live river + score.
- * Usage: <iframe src="https://fervor.up.railway.app/embed/FIXTURE_ID" />
+ * Usage: <iframe src="https://torq.up.railway.app/embed/FIXTURE_ID" />
  */
 export default function EmbedPage() {
   const params = useParams<{ id: string }>();
@@ -64,7 +64,7 @@ export default function EmbedPage() {
         </div>
         <div className="flex min-w-0 items-center justify-end gap-1.5">
           <span className="truncate text-xs font-semibold">{match.away}</span>
-          <span className="text-lg leading-none">{flagOf(match.away)}</span>
+          <Flag team={match.away} size="sm" />
         </div>
       </div>
 

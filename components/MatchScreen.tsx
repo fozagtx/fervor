@@ -38,16 +38,18 @@ export default function MatchScreen({
     if (autoReplay) setReplay(true);
   }, [autoReplay]);
 
-  // Finished matches show their full recorded history without needing replay
+  // Finished matches: load recorded wave immediately so chart shows before recap/replay.
   const [history, setHistory] = useState<{ probs: MatchState["probs"]; events: MatchState["events"] } | null>(null);
   const streamFinished = /(ft|full|final|ended|finish)/.test(streamMatch?.gameState.toLowerCase() ?? "");
   useEffect(() => {
-    if (replay || !streamFinished || !streamMatch || streamMatch.probs.length > 5) return;
+    if (replay || !streamFinished || !streamMatch) return;
+    // Still hydrate if stream only has a thin buffer
+    if (streamMatch.probs.length > 40) return;
     let stale = false;
     fetch(`/api/history/${fixtureId}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((h) => {
-        if (!stale && h?.probs) setHistory(h);
+        if (!stale && h?.probs?.length > 5) setHistory(h);
       })
       .catch(() => {});
     return () => {
@@ -56,7 +58,7 @@ export default function MatchScreen({
   }, [fixtureId, replay, streamFinished, streamMatch]);
 
   const match: MatchState | undefined =
-    streamMatch && !replay && history && streamMatch.probs.length <= 5
+    streamMatch && !replay && history && history.probs.length > (streamMatch.probs.length ?? 0)
       ? { ...streamMatch, probs: history.probs, events: history.events }
       : streamMatch;
 
@@ -137,7 +139,7 @@ export default function MatchScreen({
                 className="hidden border-default-300 text-default-500 sm:flex"
                 startContent={<Icon icon="solar:widget-add-linear" width={14} />}
                 onPress={() =>
-                  window.open(`/mini/${fixtureId}`, "torq-mini", "width=380,height=110,resizable=yes")
+                  window.open(`/mini/${fixtureId}?p=1`, "torq-mini", "width=380,height=110,resizable=yes")
                 }
               >
                 Mini

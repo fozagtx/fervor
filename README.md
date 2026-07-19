@@ -6,7 +6,7 @@ Fans watch a win-probability **wave**, **Drama Score**, market-shift moments, **
 
 | | |
 |---|---|
-| **App** | https://fervor.up.railway.app |
+| **App** | https://torq.up.railway.app |
 | **Mac notch (DMG)** | [Download Torq.dmg](https://github.com/fozagtx/fervor/releases/download/torq-mac/Torq.dmg) |
 | **Repo** | https://github.com/fozagtx/fervor |
 | **Track** | TxODDS · Consumer & Fan Experiences |
@@ -36,13 +36,13 @@ TxLINE endpoints + API feedback → [`docs/txline.md`](docs/txline.md)
 
 ## Screenshots
 
-| Landing | Lobby |
+| Feed | Match |
 |---|---|
-| ![Landing](docs/screenshots/landing.png) | ![Lobby](docs/screenshots/lobby.png) |
+| ![Feed](docs/screenshots/landing.png) | ![Match](docs/screenshots/match-story.png) |
 
-| Match story | Replay |
+| Replay | Full-time |
 |---|---|
-| ![Match](docs/screenshots/match-story.png) | ![Replay](docs/screenshots/replay.png) |
+| ![Replay](docs/screenshots/replay.png) | ![Full-time](docs/screenshots/lobby.png) |
 
 ## Quick Start
 
@@ -81,7 +81,7 @@ Torq includes a native **macOS Dynamic Island / menu-bar notch** app — same li
 | [TxLINE integration](docs/txline.md) | Endpoints used + Earn API feedback |
 | [Mac notch install](macos/README.md) | DMG download + island setup |
 | [Submission / Earn paste](docs/submission.md) | Form answers, product notes |
-| [Demo script](claudedocs/demo-script.md) | 5-min recording spine |
+| [Demo script](docs/demo-script.md) | 5-min recording spine |
 | [UX context](docs/ux-context-profile.md) | Fan language / north star |
 
 ## License

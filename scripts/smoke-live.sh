@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # End-to-end smoke check against the public MVP.
 set -euo pipefail
-BASE="${1:-https://fervor.up.railway.app}"
+BASE="${1:-https://torq.up.railway.app}"
 
 fail=0
 check() {

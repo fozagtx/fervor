@@ -1,8 +1,25 @@
 import { hub } from "@/lib/txline/hub";
-import { startReplay } from "@/lib/txline/replay";
-import type { StreamMessage } from "@/lib/txline/types";
+import { historyFor, startReplay } from "@/lib/txline/replay";
+import type { MatchState, StreamMessage } from "@/lib/txline/types";
 
 export const dynamic = "force-dynamic";
+
+function slimProbs(m: MatchState, max = 120): MatchState {
+  if (m.probs.length <= max) return m;
+  const stride = Math.ceil(m.probs.length / max);
+  return {
+    ...m,
+    probs: m.probs.filter((_, i) => i % stride === 0 || i === m.probs.length - 1),
+  };
+}
+
+function withFinishedWave(m: MatchState): MatchState {
+  const finished = /(ft|full|final|ended|finish)/i.test(m.gameState);
+  if (!finished || m.probs.length >= 8) return slimProbs(m);
+  const history = historyFor(m);
+  if (!history || history.probs.length < 5) return slimProbs(m);
+  return slimProbs({ ...m, probs: history.probs, events: history.events });
+}
 
 /** Browser-facing SSE: initial snapshot then live increments, or a replay. */
 export async function GET(req: Request) {
@@ -44,7 +61,8 @@ export async function GET(req: Request) {
 
       const matches = hub
         .snapshot()
-        .filter((m) => (fixtureId ? m.fixtureId === fixtureId : true));
+        .filter((m) => (fixtureId ? m.fixtureId === fixtureId : true))
+        .map(withFinishedWave);
       send({ type: "init", matches });
 
       const unsubscribe = hub.subscribe((msg) => {

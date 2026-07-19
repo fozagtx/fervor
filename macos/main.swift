@@ -5,7 +5,7 @@ import AppKit
 // Expanded, it becomes a native dashboard: one row per match with flags,
 // scores, status chips and live dots, exactly the island grammar.
 
-let BASE = ProcessInfo.processInfo.environment["TORQ_URL"] ?? "https://fervor.up.railway.app"
+let BASE = ProcessInfo.processInfo.environment["TORQ_URL"] ?? "https://torq.up.railway.app"
 
 let FLAGS: [String: String] = [
     "Argentina": "🇦🇷", "Belgium": "🇧🇪", "Brazil": "🇧🇷", "Canada": "🇨🇦",
@@ -34,14 +34,27 @@ struct MatchInfo {
     var isLive: Bool {
         let g = gameState.lowercased()
         return !(g.contains("sched") || g.contains("await") || g.contains("full")
-                 || g.contains("final") || g.contains("ended") || g.contains("finish"))
+                 || g.contains("final") || g.contains("ended") || g.contains("finish")
+                 || g.contains("ft") || g.contains("postpon"))
             && probHome != nil
     }
     var isFinished: Bool {
         let g = gameState.lowercased()
-        return g.contains("full") || g.contains("final") || g.contains("ended") || g.contains("finish")
+        return g.contains("full") || g.contains("final") || g.contains("ended")
+            || g.contains("finish") || g == "ft" || g.contains("ft ")
     }
 
+    /// Notch only cares about live + still-upcoming. Finished / stale KO → hide.
+    var isNotchWorthy: Bool {
+        if isFinished { return false }
+        if isLive { return true }
+        let nowMs = Date().timeIntervalSince1970 * 1000
+        // Kickoff more than 2h ago and still not live → dead row
+        if startTime > 0 && startTime < nowMs - 2 * 3600 * 1000 { return false }
+        // Too far in the future → clutter
+        if startTime > nowMs + 10 * 24 * 3600 * 1000 { return false }
+        return true
+    }
 }
 
 func countdownLabel(startTime: Double, now: Date = Date()) -> String? {
@@ -73,11 +86,15 @@ struct Notch {
 
 let NOTCH = Notch.read()
 let FILLET: CGFloat = 9
-let COLLAPSED = NSSize(width: NOTCH.width + 156 + FILLET * 2, height: NOTCH.height)
-let HOVERED = NSSize(width: COLLAPSED.width + 6, height: COLLAPSED.height + 6)
-let EXPANDED_WIDTH: CGFloat = max(COLLAPSED.width + 180, 580)
-let ROW_H: CGFloat = 36
-let STAGE = NSSize(width: EXPANDED_WIDTH + 40, height: NOTCH.height + 640)
+/// Wings hug the camera — no fat empty black bars on the sides.
+let COLLAPSED = NSSize(width: NOTCH.width + 108 + FILLET * 2, height: NOTCH.height)
+let HOVERED = NSSize(width: COLLAPSED.width + 4, height: COLLAPSED.height + 4)
+/// Wider expanded dashboard — room for slip + wave without feeling cramped.
+let EXPANDED_WIDTH: CGFloat = max(COLLAPSED.width + 120, 560)
+/// Content inset = fillet curve + 2pt — fill the island edge-to-edge.
+let SIDE: CGFloat = FILLET + 2
+let ROW_H: CGFloat = 34
+let STAGE = NSSize(width: EXPANDED_WIDTH + 48, height: NOTCH.height + 680)
 
 /// SportyBet-style decimal price from win % — display only, no stake.
 func marketPrice(_ prob: Double?) -> String {
@@ -439,11 +456,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         stage.addSubview(island)
         stage.hot = island
 
-        // Compact wings: mascot left of the camera, readout to its right
+        // Compact wings: mascot left of the camera, readout to its right — tight, no dead air
         collapsedContent = NSView(frame: NSRect(x: 0, y: 0, width: COLLAPSED.width, height: COLLAPSED.height))
         let wing = (COLLAPSED.width - NOTCH.width) / 2
-        let midY = (COLLAPSED.height - 18) / 2
-        mascotView = NSImageView(frame: NSRect(x: (wing - 18) / 2, y: midY, width: 18, height: 18))
+        let midY = (COLLAPSED.height - 16) / 2
+        mascotView = NSImageView(frame: NSRect(x: FILLET + 2, y: midY, width: 16, height: 16))
         mascotView.image = mascotIdle
         mascotView.imageScaling = .scaleProportionallyUpOrDown
         mascotView.wantsLayer = true
@@ -453,10 +470,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         label.font = NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .semibold)
         label.textColor = .white
         label.alignment = .center
-        label.frame = NSRect(x: COLLAPSED.width - wing + 2, y: midY + 1, width: wing - 8, height: 15)
+        label.frame = NSRect(x: COLLAPSED.width - wing + 1, y: midY, width: wing - FILLET - 4, height: 15)
         collapsedContent.addSubview(label)
 
-        barTrack = NSView(frame: NSRect(x: 22, y: 2, width: COLLAPSED.width - 44, height: 3))
+        barTrack = NSView(frame: NSRect(x: SIDE, y: 2, width: COLLAPSED.width - SIDE * 2, height: 3))
         barTrack.isHidden = true
         barTrack.wantsLayer = true
         barTrack.layer?.backgroundColor = NSColor(white: 1, alpha: 0.15).cgColor
@@ -526,17 +543,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func morph(to size: NSSize, radius: CGFloat, duration: TimeInterval, then: (() -> Void)? = nil) {
         let newPath = notchPath(size: size, bottomRadius: radius)
-        let timing = CAMediaTimingFunction(controlPoints: 0.32, 1.22, 0.5, 1)
+        // Smooth ease-out — no bouncy overshoot that desyncs width vs height.
+        let timing = CAMediaTimingFunction(controlPoints: 0.22, 0.9, 0.28, 1)
+        CATransaction.begin()
+        CATransaction.setAnimationDuration(duration)
+        CATransaction.setAnimationTimingFunction(timing)
         for layer in [maskLayer, strokeLayer] as [CAShapeLayer] {
             let anim = CABasicAnimation(keyPath: "path")
             anim.fromValue = layer.path
             anim.toValue = newPath
             anim.duration = duration
             anim.timingFunction = timing
+            anim.fillMode = .forwards
+            anim.isRemovedOnCompletion = false
             layer.add(anim, forKey: "shape")
             layer.path = newPath
         }
         island.layer?.shadowPath = newPath
+        CATransaction.commit()
         NSAnimationContext.runAnimationGroup({ ctx in
             ctx.duration = duration
             ctx.allowsImplicitAnimation = true
@@ -784,12 +808,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         func favRank(_ m: MatchInfo) -> Int {
             (favorites.contains(m.home) ? 2 : 0) + (favorites.contains(m.away) ? 2 : 0) + (m.isLive ? 1 : 0)
         }
-        let live = matchesCache.filter { $0.isLive }.sorted { favRank($0) > favRank($1) || $0.drama > $1.drama }
-        let upcoming = matchesCache.filter { !$0.isLive && !$0.isFinished }
-            .sorted { favRank($0) > favRank($1) || $0.startTime < $1.startTime }.prefix(3)
-        let finished = matchesCache.filter { $0.isFinished }
-            .sorted { $0.startTime > $1.startTime }.prefix(2)
-        let shown: [MatchInfo] = Array((live + Array(upcoming) + Array(finished)).prefix(6))
+        // Live + upcoming only — never pad the island with old FT fixtures.
+        let active = matchesCache.filter { $0.isNotchWorthy }
+        let live = active.filter { $0.isLive }.sorted { favRank($0) > favRank($1) || $0.drama > $1.drama }
+        let upcoming = active.filter { !$0.isLive }
+            .sorted { favRank($0) > favRank($1) || $0.startTime < $1.startTime }.prefix(5)
+        let shown: [MatchInfo] = Array((live + Array(upcoming)).prefix(6))
 
         let width = EXPANDED_WIDTH
         let alertH: CGFloat = isAlerting ? 52 : 0
@@ -806,27 +830,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         expandedContent.frame = NSRect(x: 0, y: 0, width: width, height: contentH)
         var y = contentH
 
+        let contentW = width - SIDE * 2
+
         if isAlerting {
             y -= alertH
-            let banner = NSView(frame: NSRect(x: 8, y: y, width: width - 16, height: alertH - 6))
+            let banner = NSView(frame: NSRect(x: SIDE, y: y, width: contentW, height: alertH - 6))
             banner.wantsLayer = true
             banner.layer?.backgroundColor = NSColor(red: 0.06, green: 0.55, blue: 0.38, alpha: 0.35).cgColor
             banner.layer?.cornerRadius = 12
             let title = NSTextField(labelWithString: alertHeadline)
             title.font = NSFont.systemFont(ofSize: 14, weight: .bold)
             title.textColor = .white
-            title.frame = NSRect(x: 14, y: 22, width: width - 50, height: 18)
+            title.frame = NSRect(x: 12, y: 22, width: contentW - 24, height: 18)
             banner.addSubview(title)
             let sub = NSTextField(labelWithString: alertSub)
             sub.font = NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .medium)
             sub.textColor = NSColor(white: 1, alpha: 0.7)
-            sub.frame = NSRect(x: 14, y: 6, width: width - 50, height: 14)
+            sub.frame = NSRect(x: 12, y: 6, width: contentW - 24, height: 14)
             banner.addSubview(sub)
             expandedContent.addSubview(banner)
         }
 
         y -= headerH
-        footerMascot = NSImageView(frame: NSRect(x: 14, y: y + 4, width: 22, height: 22))
+        footerMascot = NSImageView(frame: NSRect(x: SIDE, y: y + 4, width: 20, height: 20))
         footerMascot.image = mascotIdle
         footerMascot.imageScaling = .scaleProportionallyUpOrDown
         footerMascot.wantsLayer = true
@@ -843,16 +869,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             layer.add(bounce, forKey: "bounce")
         }
 
-        let header = NSTextField(labelWithString: "1X2 MARKET · FREE CALL")
+        let header = NSTextField(labelWithString: "1X2 · FREE CALL")
         header.font = NSFont.monospacedSystemFont(ofSize: 10, weight: .bold)
         header.textColor = NSColor(white: 1, alpha: 0.5)
-        header.frame = NSRect(x: 42, y: y + 8, width: 220, height: 14)
+        header.frame = NSRect(x: SIDE + 26, y: y + 8, width: 180, height: 14)
         expandedContent.addSubview(header)
         if live.count > 0 {
             let liveChip = chip("● \(live.count) LIVE",
                                 fg: NSColor(red: 0.2, green: 0.9, blue: 0.6, alpha: 1),
                                 bg: NSColor(red: 0.06, green: 0.72, blue: 0.51, alpha: 0.18))
-            liveChip.frame.origin = NSPoint(x: width - liveChip.frame.width - 18, y: y + 5)
+            liveChip.frame.origin = NSPoint(x: width - liveChip.frame.width - SIDE, y: y + 5)
             expandedContent.addSubview(liveChip)
         }
 
@@ -860,40 +886,40 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             ?? shown.first(where: { $0.isLive })
             ?? shown.first
 
-        // Featured scoreboard
+        // Featured scoreboard — full width inside fillet
         y -= featuredH
         if let f = featured {
             fetchCrowd(fixtureId: f.fixtureId)
-            let board = NSView(frame: NSRect(x: 8, y: y, width: width - 16, height: featuredH - 6))
+            let board = NSView(frame: NSRect(x: SIDE, y: y, width: contentW, height: featuredH - 6))
             let homeL = NSTextField(labelWithString: "\(flag(f.home)) \(f.home)")
             homeL.font = NSFont.systemFont(ofSize: 13, weight: .semibold)
             homeL.textColor = .white
             homeL.alignment = .right
             homeL.lineBreakMode = .byTruncatingTail
-            homeL.frame = NSRect(x: 8, y: 14, width: (width - 16) / 2 - 44, height: 18)
+            homeL.frame = NSRect(x: 4, y: 14, width: contentW / 2 - 40, height: 18)
             board.addSubview(homeL)
             let mid = f.isLive || f.isFinished ? "\(f.scoreHome)–\(f.scoreAway)" : "vs"
             let score = NSTextField(labelWithString: mid)
             score.font = NSFont.monospacedDigitSystemFont(ofSize: 22, weight: .bold)
             score.textColor = .white
             score.alignment = .center
-            score.frame = NSRect(x: (width - 16) / 2 - 36, y: 10, width: 72, height: 26)
+            score.frame = NSRect(x: contentW / 2 - 36, y: 10, width: 72, height: 26)
             board.addSubview(score)
             let awayL = NSTextField(labelWithString: "\(f.away) \(flag(f.away))")
             awayL.font = NSFont.systemFont(ofSize: 13, weight: .semibold)
             awayL.textColor = .white
             awayL.alignment = .left
             awayL.lineBreakMode = .byTruncatingTail
-            awayL.frame = NSRect(x: (width - 16) / 2 + 40, y: 14, width: (width - 16) / 2 - 48, height: 18)
+            awayL.frame = NSRect(x: contentW / 2 + 40, y: 14, width: contentW / 2 - 44, height: 18)
             board.addSubview(awayL)
             expandedContent.addSubview(board)
 
             // White SportyBet slip
             y -= marketH
-            let slip = NSView(frame: NSRect(x: 8, y: y, width: width - 16, height: marketH - 8))
+            let slip = NSView(frame: NSRect(x: SIDE, y: y, width: contentW, height: marketH - 8))
             slip.wantsLayer = true
             slip.layer?.backgroundColor = NSColor.white.cgColor
-            slip.layer?.cornerRadius = 16
+            slip.layer?.cornerRadius = 14
             slip.layer?.borderWidth = 1
             slip.layer?.borderColor = NSColor(white: 0.9, alpha: 1).cgColor
 
@@ -1009,7 +1035,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
             // Compact wave under the slip
             y -= chartH
-            let chart = NSView(frame: NSRect(x: 8, y: y, width: width - 16, height: chartH - 6))
+            let chart = NSView(frame: NSRect(x: SIDE, y: y, width: contentW, height: chartH - 6))
             chart.wantsLayer = true
             chart.layer?.backgroundColor = NSColor(white: 1, alpha: 0.06).cgColor
             chart.layer?.cornerRadius = 12
@@ -1063,8 +1089,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Other markets (tap to switch featured)
         for m in others.prefix(4) {
             y -= ROW_H
-            let rowW = width - 16
-            let row = NSView(frame: NSRect(x: 8, y: y, width: rowW, height: ROW_H - 4))
+            let rowW = contentW
+            let row = NSView(frame: NSRect(x: SIDE, y: y, width: rowW, height: ROW_H - 4))
             row.wantsLayer = true
             row.layer?.backgroundColor = NSColor(white: 1, alpha: 0.05).cgColor
             row.layer?.cornerRadius = 9
@@ -1100,13 +1126,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             rowFixtures[row] = m.fixtureId
         }
 
-        let hint = NSTextField(labelWithString: "tap 1·X·2 · FOMO ticker · Beat cheers · tap row to switch")
+        let hint = NSTextField(labelWithString: "tap 1·X·2 · row switches market")
         hint.font = NSFont.monospacedSystemFont(ofSize: 9, weight: .medium)
         hint.textColor = NSColor(white: 1, alpha: 0.35)
-        hint.frame = NSRect(x: 16, y: 10, width: width - 70, height: 12)
+        hint.frame = NSRect(x: SIDE, y: 10, width: contentW - 40, height: 12)
         expandedContent.addSubview(hint)
 
-        muteButton = NSButton(frame: NSRect(x: width - 44, y: 4, width: 28, height: 26))
+        muteButton = NSButton(frame: NSRect(x: width - SIDE - 28, y: 4, width: 28, height: 26))
         muteButton.bezelStyle = .inline
         muteButton.isBordered = false
         muteButton.imagePosition = .imageOnly
@@ -1125,20 +1151,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard !isExpanded, !matchesCache.isEmpty else { return }
         isExpanded = true
         let size = rebuildDashboard()
-        // Phase 1: pour downward from the notch, barely wider
-        let mid = NSSize(width: COLLAPSED.width + 36, height: size.height * 0.6)
-        morph(to: mid, radius: 18, duration: 0.14) {
-            // Phase 2: spring open to full width
-            self.morph(to: size, radius: RADIUS_EXPANDED, duration: 0.34)
-        }
+        // One motion: width + height grow together (no height-first then side expand).
+        morph(to: size, radius: RADIUS_EXPANDED, duration: 0.42)
         NSAnimationContext.runAnimationGroup { ctx in
-            ctx.duration = 0.22
+            ctx.duration = 0.2
             ctx.allowsImplicitAnimation = true
+            ctx.timingFunction = CAMediaTimingFunction(controlPoints: 0.22, 0.9, 0.28, 1)
             collapsedContent.animator().alphaValue = 0
         }
         NSAnimationContext.runAnimationGroup { ctx in
-            ctx.duration = 0.4
+            ctx.duration = 0.38
             ctx.allowsImplicitAnimation = true
+            ctx.timingFunction = CAMediaTimingFunction(controlPoints: 0.22, 0.9, 0.28, 1)
             expandedContent.animator().alphaValue = 1
         }
     }
@@ -1147,14 +1171,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard isExpanded else { return }
         isExpanded = false
         morph(to: isHovering ? HOVERED : COLLAPSED,
-              radius: isHovering ? RADIUS_COLLAPSED + 2 : RADIUS_COLLAPSED, duration: 0.34)
+              radius: isHovering ? RADIUS_COLLAPSED + 2 : RADIUS_COLLAPSED, duration: 0.36)
         NSAnimationContext.runAnimationGroup { ctx in
-            ctx.duration = 0.18
+            ctx.duration = 0.16
             ctx.allowsImplicitAnimation = true
             expandedContent.animator().alphaValue = 0
         }
         NSAnimationContext.runAnimationGroup { ctx in
-            ctx.duration = 0.3
+            ctx.duration = 0.32
             ctx.allowsImplicitAnimation = true
             collapsedContent.animator().alphaValue = 1
         }
@@ -1210,15 +1234,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 ))
             }
             DispatchQueue.main.async {
-                self.apply(matches)
-                self.hydrateWaves(matches)
+                // Drop FT / stale rows before they ever hit the island cache.
+                let active = matches.filter { $0.isNotchWorthy }
+                self.apply(active)
+                self.hydrateWaves(active)
             }
         }.resume()
     }
 
-    /// Pull full market river for fixtures the list left empty (finished / thin series).
+    /// Pull full market river for live/upcoming fixtures the list left thin.
     func hydrateWaves(_ matches: [MatchInfo]) {
-        let need = matches.filter { $0.series.count < 8 && ($0.isFinished || $0.probHome != nil) }.prefix(6)
+        let need = matches.filter { $0.isNotchWorthy && $0.series.count < 8 && $0.probHome != nil }.prefix(6)
         for m in need {
             guard let url = URL(string: "\(BASE)/api/history/\(m.fixtureId)") else { continue }
             URLSession.shared.dataTask(with: url) { [weak self] data, _, _ in
@@ -1292,27 +1318,41 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let live = matches.filter { $0.isLive }
         let upcoming = matches
-            .filter { !$0.isLive && !$0.isFinished }
+            .filter { !$0.isLive && $0.isNotchWorthy }
             .sorted { $0.startTime < $1.startTime }
 
         func prefer(_ m: MatchInfo) -> Int {
             var s = 0
             if favorites.contains(m.home) || favorites.contains(m.away) { s += 10 }
             if m.isLive { s += 20 }
-            if m.series.count > 3 { s += 15 } // always surface the wave
+            if m.series.count > 3 { s += 8 }
             s += min(5, m.drama / 20)
+            // Prefer kickoffs soonest among upcoming
+            if !m.isLive, m.startTime > 0 {
+                let hours = max(0, (m.startTime / 1000 - Date().timeIntervalSince1970) / 3600)
+                s += max(0, 6 - Int(hours / 6))
+            }
             return s
         }
 
-        var pool = live + upcoming
-        if pool.allSatisfy({ $0.series.count <= 3 }) {
-            pool += matches.filter { $0.isFinished && $0.series.count > 3 }
-        }
+        let pool = live + upcoming
         var pick = pool.max(by: { prefer($0) < prefer($1) })
-        if Date() < pinnedUntil, let pinned = matches.first(where: { $0.fixtureId == pinnedFixture }) {
+        // Don't keep a pin on a finished/stale fixture
+        if Date() < pinnedUntil,
+           let pinned = matches.first(where: { $0.fixtureId == pinnedFixture && $0.isNotchWorthy }) {
             pick = pinned
+        } else if pinnedFixture != 0,
+                  matches.first(where: { $0.fixtureId == pinnedFixture })?.isNotchWorthy != true {
+            pinnedFixture = 0
+            pinnedUntil = .distantPast
         }
-        guard let pick else { return }
+        guard let pick else {
+            // Nothing live/upcoming — idle compact state, clear FT leftovers
+            currentFixture = 0
+            if label.stringValue != "Torq" { crossfadeLabel(to: "Torq") }
+            barTrack.isHidden = true
+            return
+        }
         currentFixture = pick.fixtureId
 
         let text: String

@@ -1,31 +1,18 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { useMatchStream } from "@/lib/useMatchStream";
 import Flag from "./Flag";
 import { COLORS } from "./WaveChart";
 
 /**
- * Tiny popup scoreboard only. Full browser tabs redirect to /match/[id].
- * White, dense — no empty space, no chrome.
+ * Tiny popup scoreboard (380×~110). Never stretches.
+ * Full browser tabs never land here — middleware requires ?p=1.
  */
 export default function MiniScore({ fixtureId }: { fixtureId: number }) {
-  const router = useRouter();
   const { matches } = useMatchStream({ fixtureId });
   const match = matches.get(fixtureId);
 
-  // /mini is for the small popup window. A normal tab → full match.
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const tall = window.innerHeight > 160 || window.innerWidth > 480;
-    const popup = window.opener != null || window.name === "torq-mini";
-    if (tall && !popup) {
-      router.replace(`/match/${fixtureId}`);
-    }
-  }, [fixtureId, router]);
-
-  // Lock document to content height so the page can't grow a white void.
   useEffect(() => {
     document.documentElement.setAttribute("data-torq-mini-root", "1");
     document.body.setAttribute("data-torq-mini-root", "1");
@@ -35,9 +22,20 @@ export default function MiniScore({ fixtureId }: { fixtureId: number }) {
     };
   }, []);
 
+  // If someone strips ?p=1 client-side, bounce to full match.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!new URLSearchParams(window.location.search).has("p")) {
+      window.location.replace(`/match/${fixtureId}`);
+    }
+  }, [fixtureId]);
+
   if (!match) {
     return (
-      <main data-torq-mini className="flex h-[96px] w-full items-center justify-center bg-white">
+      <main
+        data-torq-mini
+        className="box-border flex h-[96px] w-[380px] max-w-full items-center justify-center bg-white"
+      >
         <span className="live-dot inline-block h-2 w-2 rounded-full bg-emerald-500" />
       </main>
     );
@@ -56,14 +54,16 @@ export default function MiniScore({ fixtureId }: { fixtureId: number }) {
       data-torq-mini
       role="link"
       tabIndex={0}
-      onClick={() => router.push(`/match/${fixtureId}`)}
+      onClick={() => {
+        window.location.href = `/match/${fixtureId}`;
+      }}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
-          router.push(`/match/${fixtureId}`);
+          window.location.href = `/match/${fixtureId}`;
         }
       }}
-      className="box-border flex w-full cursor-pointer flex-col gap-1 bg-white px-3 py-2 text-zinc-900 outline-none select-none"
+      className="box-border flex w-[380px] max-w-full cursor-pointer flex-col gap-1 bg-white px-3 py-2 text-zinc-900 outline-none select-none"
       aria-label={`${match.home} ${match.scoreHome}–${match.scoreAway} ${match.away}`}
     >
       <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">

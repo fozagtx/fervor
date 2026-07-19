@@ -9,6 +9,12 @@
   --chart-grid: #e4e4e7;
   --chart-marker-bg: #ffffff;
   --chart-draw-label: #71717a;
+  /* Emil / Apple-style motion tokens — strong ease-out, keep UI < 300ms */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --duration-press: 140ms;
+  --duration-ui: 200ms;
 }
 
 .dark {
@@ -34,7 +40,7 @@ body {
   color: #18181b;
 }
 
-/* /mini popup — tight white page, kill empty viewport + stray chrome */
+/* /mini popup — fixed 380px strip, no full-viewport stretch / white void */
 html[data-torq-mini-root],
 html:has([data-torq-mini]),
 body[data-torq-mini-root],
@@ -42,8 +48,10 @@ body:has([data-torq-mini]) {
   margin: 0 !important;
   padding: 0 !important;
   min-height: 0 !important;
-  height: auto !important;
-  max-height: none !important;
+  height: 110px !important;
+  max-height: 110px !important;
+  width: 380px !important;
+  max-width: 380px !important;
   overflow: hidden !important;
   background: #ffffff !important;
   color: #18181b !important;
@@ -52,7 +60,10 @@ body:has([data-torq-mini]) {
 
 body[data-torq-mini-root] [data-overlay-container],
 body:has([data-torq-mini]) [data-overlay-container] {
-  display: contents;
+  display: block;
+  width: 380px;
+  height: 110px;
+  overflow: hidden;
 }
 
 /* Hide Next / tooling floating badges on mini */
@@ -93,4 +104,47 @@ body:has([data-torq-mini]) [data-nextjs-toast] {
 }
 .live-dot {
   animation: live-beat 1.6s ease-in-out infinite;
+}
+
+/* Pressable — instant feedback (Emil: scale 0.97, transform-only) */
+.pressable {
+  transition: transform var(--duration-press) var(--ease-out);
+}
+.pressable:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pressable-hover:hover {
+    transform: scale(1.02);
+  }
+}
+
+/* Reel slide enter — opacity + slight rise, stagger via --stagger */
+@keyframes reel-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.reel-enter {
+  animation: reel-enter var(--duration-ui) var(--ease-out) both;
+  animation-delay: var(--stagger, 0ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-dot,
+  .reel-enter {
+    animation: none !important;
+  }
+  .pressable,
+  .pressable:active,
+  .pressable-hover:hover {
+    transition: none !important;
+    transform: none !important;
+  }
 }
